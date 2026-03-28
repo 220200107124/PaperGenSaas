@@ -17,3 +17,6 @@ coverage/
 *.tfstate.backup
 .git/
 .antigravity/
+
+# Exclude unnecessary backend
+nexavalue-backend/
