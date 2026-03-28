@@ -8,7 +8,7 @@ import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { createPaginationResponse } from '../common/utils/pagination.util';
 import * as path from 'path';
 
-const PdfPrinter = require('pdfmake/js/printer').default;
+const PdfPrinter = require('pdfmake/js/Printer').default;
 const virtualFs = require('pdfmake/js/virtual-fs').default;
 const URLResolver = require('pdfmake/js/URLResolver').default;
 
