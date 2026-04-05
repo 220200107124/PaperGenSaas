@@ -29,7 +29,7 @@ const SubjectsManagementPage: React.FC = () => {
         refresh,
         setData,
     } = usePagination<Subject>({
-        url: `http://localhost:3000/subjects${selectedStandard ? `?standardId=${selectedStandard}` : ''}`,
+        url: `${import.meta.env.VITE_API_URL}/subjects${selectedStandard ? `?standardId=${selectedStandard}` : ''}`,
         initialLimit: 10,
     });
 
@@ -38,7 +38,7 @@ const SubjectsManagementPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 // Fetch active standards for dropdown - using a large limit to get all
-                const response = await axios.get('http://localhost:3000/standards?limit=100', {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/standards?limit=100`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setStandards(response.data.data);
@@ -64,12 +64,12 @@ const SubjectsManagementPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (editingSubject) {
-                    await axios.patch(`http://localhost:3000/subjects/${editingSubject.id}`, values, {
+                    await axios.patch(`${import.meta.env.VITE_API_URL}/subjects/${editingSubject.id}`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Subject updated successfully');
                 } else {
-                    await axios.post('http://localhost:3000/subjects', values, {
+                    await axios.post(`${import.meta.env.VITE_API_URL}/subjects`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Subject created successfully');
@@ -86,7 +86,7 @@ const SubjectsManagementPage: React.FC = () => {
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:3000/subjects/${id}/status`,
+            await axios.patch(`${import.meta.env.VITE_API_URL}/subjects/${id}/status`,
                 { status: !currentStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -101,7 +101,7 @@ const SubjectsManagementPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this subject?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/subjects/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/subjects/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Subject deleted');

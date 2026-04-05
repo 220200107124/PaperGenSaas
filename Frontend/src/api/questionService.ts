@@ -25,4 +25,19 @@ export const questionService = {
   deleteQuestion: async (id: string): Promise<void> => {
     await apiClient.delete(`/questions/${id}`);
   },
+
+  extractFromPdf: async (formData: FormData): Promise<any[]> => {
+    const response = await apiClient.post<any[]>('/questions/extract-pdf', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  bulkCreate: async (questions: any[]): Promise<any> => {
+    const response = await apiClient.post('/questions/bulk', { questions });
+    return response.data;
+  }
 };
+

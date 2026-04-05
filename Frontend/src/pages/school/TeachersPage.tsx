@@ -26,7 +26,7 @@ const TeachersPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<User>({
-        url: 'http://localhost:3000/teachers',
+        url: `${import.meta.env.VITE_API_URL}/teachers`,
         initialLimit: 10,
     });
 
@@ -47,12 +47,12 @@ const TeachersPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (editingTeacher) {
-                    await axios.patch(`http://localhost:3000/teachers/${editingTeacher.id}`, values, {
+                    await axios.patch(`${import.meta.env.VITE_API_URL}/teachers/${editingTeacher.id}`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Teacher updated successfully');
                 } else {
-                    await axios.post('http://localhost:3000/teachers', values, {
+                    await axios.post(`${import.meta.env.VITE_API_URL}/teachers`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Teacher invited successfully');
@@ -82,7 +82,7 @@ const TeachersPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to remove this teacher?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/teachers/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/teachers/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Teacher removed successfully');
@@ -95,7 +95,7 @@ const TeachersPage: React.FC = () => {
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:3000/teachers/${id}`, { isActive: !currentStatus }, {
+            await axios.patch(`${import.meta.env.VITE_API_URL}/teachers/${id}`, { isActive: !currentStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             refresh();

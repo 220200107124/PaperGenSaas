@@ -437,7 +437,7 @@ const CreatePaper: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="p-8 space-y-6">
-                                        {selectedQuestions.filter(q => q.section === section.split(' ')[1]).map((q, i) => (
+                                        {selectedQuestions.filter(q => q.section === section.split(' ')[1]).map((q) => (
                                             <div key={q.questionId} className="flex items-center gap-8 p-6 rounded-3xl border border-gray-50 bg-gray-50/20 hover:border-brand-blue/20 hover:bg-white transition-all group relative">
                                                 <div className="flex-1 flex items-center justify-between">
                                                     <div className="space-y-2">

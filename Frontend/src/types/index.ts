@@ -155,8 +155,10 @@ export interface SchoolRequest {
   id: string;
   schoolName: string;
   email: string;
+  contactPerson?: string;
   phone: string;
   city: string;
   status: RequestStatus;
   createdAt: string;
 }
+

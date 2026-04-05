@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Building, User, Phone, MapPin, Loader2 } from 'lucide-react';
-import api from '../lib/axios';
+import { schoolRequestsService } from '../api/schoolRequestsService';
 
 const SchoolRegister: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -12,6 +12,7 @@ const SchoolRegister: React.FC = () => {
         city: '',
         password: ''
     });
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
@@ -27,7 +28,7 @@ const SchoolRegister: React.FC = () => {
         setError('');
 
         try {
-            await api.post('/school-register', formData);
+            await schoolRequestsService.create(formData);
             setSuccess(true);
             setTimeout(() => navigate('/login'), 3000);
         } catch (err: any) {
@@ -37,6 +38,7 @@ const SchoolRegister: React.FC = () => {
             setIsLoading(false);
         }
     };
+
 
     return (
         <div className="min-h-screen bg-bg-gray flex items-center justify-center p-4">

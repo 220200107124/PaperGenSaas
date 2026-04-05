@@ -19,5 +19,11 @@ export const authService = {
   getCurrentUser: async (): Promise<User> => {
     const response = await apiClient.get<User>('/auth/me');
     return response.data;
+  },
+
+  register: async (data: any): Promise<any> => {
+    const response = await apiClient.post('/auth/register', data);
+    return response.data;
   }
 };
+

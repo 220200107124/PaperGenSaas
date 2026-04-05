@@ -47,7 +47,7 @@ const ChaptersManagementPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<Chapter>({
-        url: `http://localhost:3000/chapters?${filterSubject ? `subjectId=${filterSubject}` : ''}`,
+        url: `${import.meta.env.VITE_API_URL}/chapters?${filterSubject ? `subjectId=${filterSubject}` : ''}`,
         initialLimit: 10,
     });
 
@@ -67,7 +67,7 @@ const ChaptersManagementPage: React.FC = () => {
     const fetchStandards = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:3000/standards?limit=100', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/standards?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStandards(res.data.data);
@@ -77,7 +77,7 @@ const ChaptersManagementPage: React.FC = () => {
     const fetchSubjects = async (stdId: string, setter: React.Dispatch<React.SetStateAction<Subject[]>>) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:3000/subjects?limit=100&standardId=${stdId}`, {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/subjects?limit=100&standardId=${stdId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setter(res.data.data);
@@ -102,12 +102,12 @@ const ChaptersManagementPage: React.FC = () => {
                 const token = localStorage.getItem('token');
                 const { standardId, ...payload } = values;
                 if (editingChapter) {
-                    await axios.patch(`http://localhost:3000/chapters/${editingChapter.id}`, payload, {
+                    await axios.patch(`${import.meta.env.VITE_API_URL}/chapters/${editingChapter.id}`, payload, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Chapter updated successfully');
                 } else {
-                    await axios.post('http://localhost:3000/chapters', payload, {
+                    await axios.post(`${import.meta.env.VITE_API_URL}/chapters`, payload, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Chapter created successfully');
@@ -145,7 +145,7 @@ const ChaptersManagementPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this chapter?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/chapters/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/chapters/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Chapter deleted successfully');
@@ -158,7 +158,7 @@ const ChaptersManagementPage: React.FC = () => {
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:3000/chapters/${id}`, { status: !currentStatus }, {
+            await axios.patch(`${import.meta.env.VITE_API_URL}/chapters/${id}`, { status: !currentStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             refresh();

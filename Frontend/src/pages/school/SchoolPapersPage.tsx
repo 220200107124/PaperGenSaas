@@ -21,7 +21,7 @@ const SchoolPapersPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<Paper>({
-        url: 'http://localhost:3000/papers',
+        url: `${import.meta.env.VITE_API_URL}/papers`,
         initialLimit: 10,
     });
 

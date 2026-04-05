@@ -11,7 +11,7 @@ const SchoolDashboard: React.FC = () => {
         const fetchStats = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:3000/schools/dashboard-stats', {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/schools/dashboard-stats`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setData(res.data);

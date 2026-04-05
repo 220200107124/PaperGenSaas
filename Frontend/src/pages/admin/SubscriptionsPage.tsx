@@ -33,7 +33,7 @@ const SubscriptionsPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<Subscription>({
-        url: 'http://localhost:3000/subscriptions',
+        url: `${import.meta.env.VITE_API_URL}/subscriptions`,
         initialLimit: 10,
     });
 
@@ -44,7 +44,7 @@ const SubscriptionsPage: React.FC = () => {
     const fetchSchools = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:3000/schools?limit=100', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/schools?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSchools(res.data.data);
@@ -74,12 +74,12 @@ const SubscriptionsPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (editingSub) {
-                    await axios.patch(`http://localhost:3000/subscriptions/${editingSub.id}`, values, {
+                    await axios.patch(`${import.meta.env.VITE_API_URL}/subscriptions/${editingSub.id}`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Subscription updated');
                 } else {
-                    await axios.post('http://localhost:3000/subscriptions', values, {
+                    await axios.post(`${import.meta.env.VITE_API_URL}/subscriptions`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Subscription created');
@@ -110,7 +110,7 @@ const SubscriptionsPage: React.FC = () => {
         if (!window.confirm('Delete this subscription?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/subscriptions/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/subscriptions/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Deleted');

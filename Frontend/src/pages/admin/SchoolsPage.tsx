@@ -26,7 +26,7 @@ const SchoolsPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<SchoolType>({
-        url: 'http://localhost:3000/schools',
+        url: `${import.meta.env.VITE_API_URL}/schools`,
         initialLimit: 10,
     });
 
@@ -49,12 +49,12 @@ const SchoolsPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (editingSchool) {
-                    await axios.patch(`http://localhost:3000/schools/${editingSchool.id}`, values, {
+                    await axios.patch(`${import.meta.env.VITE_API_URL}/schools/${editingSchool.id}`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('School updated successfully');
                 } else {
-                    await axios.post('http://localhost:3000/schools', values, {
+                    await axios.post(`${import.meta.env.VITE_API_URL}/schools`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('School created successfully');
@@ -85,7 +85,7 @@ const SchoolsPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this school? This action cannot be undone.')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/schools/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/schools/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('School deleted successfully');
@@ -98,7 +98,7 @@ const SchoolsPage: React.FC = () => {
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:3000/schools/${id}`, { status: !currentStatus }, {
+            await axios.patch(`${import.meta.env.VITE_API_URL}/schools/${id}`, { status: !currentStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             refresh();

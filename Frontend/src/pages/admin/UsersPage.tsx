@@ -30,7 +30,7 @@ const UsersPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<User>({
-        url: `http://localhost:3000/users?${roleFilter ? `role=${roleFilter}` : ''}`,
+        url: `${import.meta.env.VITE_API_URL}/users?${roleFilter ? `role=${roleFilter}` : ''}`,
         initialLimit: 10,
     });
 
@@ -41,7 +41,7 @@ const UsersPage: React.FC = () => {
     const fetchSchools = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:3000/schools?limit=100', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/schools?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSchools(res.data.data);
@@ -72,12 +72,12 @@ const UsersPage: React.FC = () => {
                 if (!payload.password) delete (payload as any).password;
 
                 if (editingUser) {
-                    await axios.patch(`http://localhost:3000/users/${editingUser.id}`, payload, {
+                    await axios.patch(`${import.meta.env.VITE_API_URL}/users/${editingUser.id}`, payload, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('User updated successfully');
                 } else {
-                    await axios.post('http://localhost:3000/users', payload, {
+                    await axios.post(`${import.meta.env.VITE_API_URL}/users`, payload, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('User created successfully');
@@ -109,7 +109,7 @@ const UsersPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to remove this user?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/users/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/users/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('User deleted successfully');
@@ -122,7 +122,7 @@ const UsersPage: React.FC = () => {
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:3000/users/${id}`, { isActive: !currentStatus }, {
+            await axios.patch(`${import.meta.env.VITE_API_URL}/users/${id}`, { isActive: !currentStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             refresh();

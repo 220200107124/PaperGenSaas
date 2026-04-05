@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, BookOpen, Edit3, Trash2, GraduationCap, ChevronRight, Inbox, PlusCircle, Building, Save, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { BookOpen, Edit3, Trash2, GraduationCap, ChevronRight, Inbox, PlusCircle, Building, Save, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
@@ -68,7 +68,7 @@ const SchoolQuestionsPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<Question>({
-        url: `http://localhost:3000/questions?sourceType=SCHOOL${filterStandard ? `&standardId=${filterStandard}` : ''}${filterSubject ? `&subjectId=${filterSubject}` : ''}${filterChapter ? `&chapterId=${filterChapter}` : ''}`,
+        url: `${import.meta.env.VITE_API_URL}/questions?sourceType=SCHOOL${filterStandard ? `&standardId=${filterStandard}` : ''}${filterSubject ? `&subjectId=${filterSubject}` : ''}${filterChapter ? `&chapterId=${filterChapter}` : ''}`,
         initialLimit: 10,
     });
 
@@ -99,7 +99,7 @@ const SchoolQuestionsPage: React.FC = () => {
     const fetchStandards = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:3000/standards?limit=100', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/standards?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStandards(res.data.data);
@@ -109,7 +109,7 @@ const SchoolQuestionsPage: React.FC = () => {
     const fetchSubjects = async (stdId: string) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:3000/subjects?limit=100&standardId=${stdId}`, {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/subjects?limit=100&standardId=${stdId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSubjects(res.data.data);
@@ -119,7 +119,7 @@ const SchoolQuestionsPage: React.FC = () => {
     const fetchChapters = async (subId: string) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:3000/chapters?limit=100&subjectId=${subId}`, {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/chapters?limit=100&subjectId=${subId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setChapters(res.data.data);
@@ -149,7 +149,7 @@ const SchoolQuestionsPage: React.FC = () => {
                 qAnswer = { text: q.answer || '' };
             }
 
-            await axios.post('http://localhost:3000/questions', {
+            await axios.post(`${import.meta.env.VITE_API_URL}/questions`, {
                 questionText: q.questionText,
                 standardId: modalStandard,
                 subjectId: modalSubject,
@@ -206,12 +206,12 @@ const SchoolQuestionsPage: React.FC = () => {
         try {
             const token = localStorage.getItem('token');
             if (editingQuestion) {
-                await axios.patch(`http://localhost:3000/questions/${editingQuestion.id}`, modalData, {
+                await axios.patch(`${import.meta.env.VITE_API_URL}/questions/${editingQuestion.id}`, modalData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Question updated');
             } else {
-                await axios.post('http://localhost:3000/questions', {
+                await axios.post(`${import.meta.env.VITE_API_URL}/questions`, {
                     ...modalData,
                     questionType: modalData.questionType, // Redundant but safe
                     marks: modalData.marks,
@@ -234,7 +234,7 @@ const SchoolQuestionsPage: React.FC = () => {
         if (!window.confirm('Delete this question?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/questions/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/questions/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Deleted');

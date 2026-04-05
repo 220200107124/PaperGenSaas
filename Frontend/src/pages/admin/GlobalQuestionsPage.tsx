@@ -37,7 +37,7 @@ const GlobalQuestionsPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<Question>({
-        url: `http://localhost:3000/questions?sourceType=GLOBAL${filterStandard ? `&standardId=${filterStandard}` : ''}${filterSubject ? `&subjectId=${filterSubject}` : ''}${filterChapter ? `&chapterId=${filterChapter}` : ''}`,
+        url: `${import.meta.env.VITE_API_URL}/questions?sourceType=GLOBAL${filterStandard ? `&standardId=${filterStandard}` : ''}${filterSubject ? `&subjectId=${filterSubject}` : ''}${filterChapter ? `&chapterId=${filterChapter}` : ''}`,
         initialLimit: 10,
     });
 
@@ -111,7 +111,7 @@ const GlobalQuestionsPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this global question?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/questions/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/questions/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Question deleted successfully');
@@ -157,12 +157,12 @@ const GlobalQuestionsPage: React.FC = () => {
             };
 
             if (editingQuestion) {
-                await axios.patch(`http://localhost:3000/questions/${editingQuestion.id}`, payload, {
+                await axios.patch(`${import.meta.env.VITE_API_URL}/questions/${editingQuestion.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Question updated');
             } else {
-                await axios.post('http://localhost:3000/questions', payload, {
+                await axios.post(`${import.meta.env.VITE_API_URL}/questions`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success('Question added');
@@ -177,7 +177,7 @@ const GlobalQuestionsPage: React.FC = () => {
     const fetchStandards = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:3000/standards?limit=100', {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/standards?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStandards(res.data.data);
@@ -187,7 +187,7 @@ const GlobalQuestionsPage: React.FC = () => {
     const fetchSubjects = async (stdId: string) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:3000/subjects?limit=100&standardId=${stdId}`, {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/subjects?limit=100&standardId=${stdId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSubjects(res.data.data);
@@ -197,7 +197,7 @@ const GlobalQuestionsPage: React.FC = () => {
     const fetchChapters = async (subId: string) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:3000/chapters?limit=100&subjectId=${subId}`, {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/chapters?limit=100&subjectId=${subId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setChapters(res.data.data);
@@ -227,7 +227,7 @@ const GlobalQuestionsPage: React.FC = () => {
                 qAnswer = { text: q.answer || '' };
             }
 
-            await axios.post('http://localhost:3000/questions', {
+            await axios.post(`${import.meta.env.VITE_API_URL}/questions`, {
                 questionText: q.questionText,
                 standardId: modalStandard,
                 subjectId: modalSubject,
@@ -261,7 +261,7 @@ const GlobalQuestionsPage: React.FC = () => {
  
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post('http://localhost:3000/questions/extract-pdf', formData, {
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/questions/extract-pdf`, formData, {
                 headers: { 
                     'Content-Type': 'multipart/form-data',
                     'Authorization': `Bearer ${token}` 

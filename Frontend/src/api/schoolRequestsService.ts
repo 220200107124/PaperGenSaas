@@ -4,7 +4,9 @@ export interface SchoolRequest {
   id: string;
   schoolName: string;
   email: string;
+  contactPerson?: string;
   phone: string;
+
   city: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
@@ -24,5 +26,11 @@ export const schoolRequestsService = {
 
   reject: async (id: string): Promise<void> => {
     await apiClient.post(`/school-requests/${id}/reject`);
+  },
+
+  create: async (data: any): Promise<any> => {
+    const response = await apiClient.post('/school-requests', data);
+    return response.data;
   }
 };
+

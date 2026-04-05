@@ -21,7 +21,7 @@ const SchoolRequestsPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<SchoolRequest>({
-        url: 'http://localhost:3000/school-requests',
+        url: `${import.meta.env.VITE_API_URL}/school-requests`,
         initialLimit: 10,
         initialFilters: { status: activeTab },
     });
@@ -30,7 +30,7 @@ const SchoolRequestsPage: React.FC = () => {
         if (!window.confirm('Approve this school registration?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`http://localhost:3000/school-requests/${id}/approve`, {}, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/school-requests/${id}/approve`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('School request approved and credentials sent.');
@@ -44,7 +44,7 @@ const SchoolRequestsPage: React.FC = () => {
         if (!window.confirm('Reject this registration?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`http://localhost:3000/school-requests/${id}/reject`, {}, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/school-requests/${id}/reject`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Registration rejected.');
@@ -64,8 +64,12 @@ const SchoolRequestsPage: React.FC = () => {
                     </div>
                     <div className="flex flex-col">
                         <span className="font-black text-gray-900 tracking-tight">{r.schoolName}</span>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{r.city || 'Unknown City'}</span>
+                        <div className="flex items-center gap-2">
+                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{r.city || 'Unknown City'}</span>
+                             {r.contactPerson && <span className="text-[10px] font-bold text-brand-blue uppercase tracking-widest border-l border-gray-100 pl-2">{r.contactPerson}</span>}
+                        </div>
                     </div>
+
                 </div>
             )
         },

@@ -30,6 +30,7 @@ export function usePagination<T>({
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(initialLimit);
     const [search, setSearch] = useState('');
+    const [filters, setFilters] = useState<Record<string, any>>(initialFilters);
     const [pagination, setPagination] = useState<PaginationData | null>(null);
 
     const fetchData = useCallback(async () => {
@@ -43,20 +44,20 @@ export function usePagination<T>({
                     search,
                     sortBy: initialSortBy,
                     order: initialOrder,
-                    ...initialFilters,
+                    ...filters,
                 },
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            if (response.data.success) {
-                setData(response.data.data);
-                setPagination(response.data.pagination);
-                setError(null);
-            } else {
-                setError(response.data.message || 'Failed to fetch data');
-            }
+            // Handle both structure: { success, data, pagination } and { data, pagination }
+            const responseData = response.data.data !== undefined ? response.data.data : response.data;
+            const paginationData = response.data.pagination;
+
+            setData(responseData);
+            setPagination(paginationData);
+            setError(null);
         } catch (err: any) {
             const msg = err.response?.data?.message || 'An error occurred while fetching data';
             setError(msg);
@@ -64,7 +65,7 @@ export function usePagination<T>({
         } finally {
             setLoading(false);
         }
-    }, [url, page, limit, search, initialSortBy, initialOrder]);
+    }, [url, page, limit, search, initialSortBy, initialOrder, filters]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -83,6 +84,8 @@ export function usePagination<T>({
         setLimit,
         search,
         setSearch,
+        filters,
+        setFilters,
         pagination,
         refresh: fetchData,
         setData, // For local updates (delete/edit)

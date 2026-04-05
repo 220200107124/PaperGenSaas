@@ -27,7 +27,7 @@ const StandardsManagementPage: React.FC = () => {
         refresh,
         setData,
     } = usePagination<Standard>({
-        url: 'http://localhost:3000/standards',
+        url: `${import.meta.env.VITE_API_URL}/standards`,
         initialLimit: 10,
     });
 
@@ -44,12 +44,12 @@ const StandardsManagementPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (editingStandard) {
-                    await axios.patch(`http://localhost:3000/standards/${editingStandard.id}`, values, {
+                    await axios.patch(`${import.meta.env.VITE_API_URL}/standards/${editingStandard.id}`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Standard updated successfully');
                 } else {
-                    await axios.post('http://localhost:3000/standards', values, {
+                    await axios.post(`${import.meta.env.VITE_API_URL}/standards`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('Standard created successfully');
@@ -66,7 +66,7 @@ const StandardsManagementPage: React.FC = () => {
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`http://localhost:3000/standards/${id}/status`,
+            await axios.patch(`${import.meta.env.VITE_API_URL}/standards/${id}/status`,
                 { status: !currentStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -81,7 +81,7 @@ const StandardsManagementPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this standard?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3000/standards/${id}`, {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/standards/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Standard deleted');

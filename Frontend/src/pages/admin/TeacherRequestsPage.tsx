@@ -25,7 +25,7 @@ const TeacherRequestsPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<User>({
-        url: 'http://localhost:3000/teachers',
+        url: `${import.meta.env.VITE_API_URL}/teachers`,
         initialLimit: 10,
         initialFilters: { status: activeTab },
     });
@@ -39,7 +39,7 @@ const TeacherRequestsPage: React.FC = () => {
         if (!window.confirm('Approve this teacher registration?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`http://localhost:3000/teachers/${id}/approve`, {}, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/teachers/${id}/approve`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Teacher approved and credentials sent.');
@@ -53,7 +53,7 @@ const TeacherRequestsPage: React.FC = () => {
         if (!window.confirm('Reject this registration?')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`http://localhost:3000/teachers/${id}/reject`, {}, {
+            await axios.post(`${import.meta.env.VITE_API_URL}/teachers/${id}/reject`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Registration rejected.');
