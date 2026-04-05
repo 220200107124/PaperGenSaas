@@ -26,7 +26,8 @@ export class QuestionsController {
 
   @Post('extract-pdf')
   @UseInterceptors(FileInterceptor('file'))
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  @RequirePermission('aiModule')
   async extractFromPDF(@UploadedFile() file: any) {
     if (!file) throw new NotFoundException('No file uploaded');
     const text = await this.questionsAIService.extractTextFromPDF(file.buffer);
@@ -38,8 +39,30 @@ export class QuestionsController {
     };
   }
 
+  @Post('bulk')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
+  async bulkCreate(@Body('questions') questions: any[], @GetUser() user: any) {
+    const finalQuestions = questions.map(q => {
+      let qData = { ...q };
+      if (user.role === UserRole.SUPER_ADMIN) {
+        qData.sourceType = SourceType.GLOBAL;
+        qData.schoolId = null;
+      } else {
+        qData.sourceType = SourceType.SCHOOL;
+        qData.schoolId = user.schoolId;
+      }
+      qData.createdBy = user.id;
+      return qData;
+    });
 
-  @Post()
+    const data = await this.questionsService.bulkCreate(finalQuestions);
+    return {
+      success: true,
+      message: `${data.length} questions added successfully`,
+      data,
+    };
+  }
+
   @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
   async create(@Body() createQuestionDto: CreateQuestionDto, @GetUser() user: any) {
     let finalDto: any = { ...createQuestionDto };

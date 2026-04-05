@@ -1,4 +1,5 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
+
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/users.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -31,7 +32,20 @@ export class TeachersService {
       if (subscription.teacherLimit !== -1 && teacherCount.pagination.totalRecords >= subscription.teacherLimit) {
         throw new ForbiddenException('Teacher limit reached for your current plan.');
       }
+
+      // Check if subject is already assigned in this school
+      const existingTeacher = await this.usersService.findAll({
+        schoolId,
+        subjectId: createTeacherDto.subjectId,
+        limit: 1,
+        page: 1,
+      });
+
+      if (existingTeacher.pagination.totalRecords > 0) {
+        throw new BadRequestException('This subject is already assigned to another teacher in your school.');
+      }
     }
+
 
     const tempPassword = Math.random().toString(36).slice(-8);
 

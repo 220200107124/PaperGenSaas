@@ -59,8 +59,22 @@ async generateQuestionsFromText(text: string): Promise<any[]> {
     );
 
     const prompt = `
-      Extract academic questions from the following text and convert them into a structured JSON array.
-      Return ONLY a pure valid JSON array. Do not include markdown formatting like \`\`\`json.
+      You are an expert Gujarati language question paper generator.
+      Extract academic questions from the provided text and convert them into a structured JSON array.
+      
+      IMPORTANT: The text is in Gujarati. Please keep the questionText, options, and answer in Gujarati.
+      
+      Question Format:
+      {
+        "questionText": "Question in Gujarati",
+        "questionType": "MCQ" | "TRUE_FALSE" | "FILL_BLANK" | "SHORT" | "LONG" | "MATCH",
+        "options": ["Option A", "Option B", "Option C", "Option D"], // null if not MCQ/MATCH
+        "answer": "Correct Answer",
+        "marks": number,
+        "difficulty": "EASY" | "MEDIUM" | "HARD"
+      }
+
+      Return ONLY a pure valid JSON array. Do not include markdown formatting or any other text.
       
       TEXT:
       ${text}
@@ -77,10 +91,8 @@ async generateQuestionsFromText(text: string): Promise<any[]> {
   } catch (error) {
     this.logger.error(`Gemini API Error: ${error.message}`);
     
-    // Fallback logic: if it still fails with 404, try the "latest" alias
     if (error.message.includes('404')) {
         this.logger.warn('Attempting fallback to gemini-1.5-flash-latest...');
-        // Try one more time with the alias
         return this.retryWithLatest(text);
     }
     
@@ -88,11 +100,11 @@ async generateQuestionsFromText(text: string): Promise<any[]> {
   }
 }
 
-// Add this helper method for robustness
 private async retryWithLatest(text: string): Promise<any[]> {
     try {
         const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
-        const result = await model.generateContent(text); // simplified prompt for retry
+        const prompt = `Convert the following text into a JSON array of Gujarati questions: ${text}`;
+        const result = await model.generateContent(prompt);
         const text_1 = result.response.text().replace(/^```json\n?|```$/gi, '').trim();
         return JSON.parse(text_1);
     } catch (e) {
@@ -100,3 +112,4 @@ private async retryWithLatest(text: string): Promise<any[]> {
     }
 }
 }
+

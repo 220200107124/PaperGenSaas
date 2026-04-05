@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
-import { UserRole } from '../users/entities/users.entity';
+import { UserRole, User } from '../users/entities/users.entity';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,50 +15,69 @@ export class AuthService {
     private subscriptionsService: SubscriptionsService,
   ) {}
 
+  async register(registerDto: RegisterDto) {
+    const existingUser = await this.usersService.findByEmail(registerDto.email);
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const verificationToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const verificationTokenExpires = new Date();
+    verificationTokenExpires.setHours(verificationTokenExpires.getHours() + 24);
+
+    const user = await this.usersService.create({
+      ...registerDto,
+      role: UserRole.TEACHER,
+      schoolId: null,
+      isEmailVerified: false,
+      verificationToken,
+      verificationTokenExpires,
+      status: 'ACTIVE', // Teachers are active by default once verified/paid
+    });
+
+    try {
+      await this.mailService.sendVerificationEmail(user.email, verificationToken);
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+    }
+
+    return {
+      message: 'Registration successful. Please check your email for verification.',
+      userId: user.id
+    };
+  }
+
   async validateUser(email: string, pass: string): Promise<any> {
     const trimmedEmail = email?.trim();
     const trimmedPass = pass?.trim();
     const user = await this.usersService.findByEmail(trimmedEmail);
     console.log(`[AuthService] Login attempt for: ${trimmedEmail} (Found: ${!!user})`);
 
-    // In a real app, hash and compare passwords
     if (user && user.password === trimmedPass) {
-      // School request flow uses ACTIVE, but old backend used APPROVED
-      if (user.status !== 'ACTIVE' && user.status !== 'APPROVED') {
-        // Individual teachers do NOT require admin approval (even if DB still says PENDING from old flow)
-        if (user.role !== UserRole.TEACHER || (user.role === UserRole.TEACHER && user.schoolId !== null)) {
-          throw new UnauthorizedException('Your account is not approved yet');
-        }
-      }
-
-      /* 
+      // 1. Check if email is verified (for individual teachers)
       if (user.role === UserRole.TEACHER && !user.schoolId && !user.isEmailVerified) {
         throw new UnauthorizedException('Please verify your email before login');
       }
-      */
+
+      // 2. Check if school account is approved (for School Admin/Teacher)
+      if (user.schoolId && (user.status !== 'ACTIVE' && user.status !== 'APPROVED')) {
+          throw new UnauthorizedException('Your school account is not approved yet');
+      }
       
       console.log(`[AuthService] Password matched for ${trimmedEmail}`);
       const { password, ...result } = user;
       return result;
     }
-    console.error(`[AuthService] Validation failed for ${trimmedEmail} (Pwd matches: ${user?.password === trimmedPass})`);
+    console.error(`[AuthService] Validation failed for ${trimmedEmail}`);
     return null;
   }
 
   async login(user: any) {
-    // Bypass subscription check (Development/Request)
-    let hasActiveSubscription = true;
-
-    /* 
-    // Check subscription for Teacher and School Admin
-    if (user.role === UserRole.TEACHER || user.role === UserRole.SCHOOL_ADMIN) {
-      if (user.schoolId) {
-        hasActiveSubscription = await this.subscriptionsService.hasActiveSubscription(user.schoolId);
-      } else {
-        hasActiveSubscription = false;
-      }
-    }
-    */
+    // Check subscription 
+    const hasActiveSubscription = await this.subscriptionsService.hasActiveSubscription({ 
+      schoolId: user.schoolId, 
+      userId: user.id 
+    });
 
     const payload = { 
       userId: user.id,
@@ -82,6 +102,7 @@ export class AuthService {
       }
     };
   }
+
 
   async forgotPassword(email: string) {
     const user = await this.usersService.findByEmail(email);

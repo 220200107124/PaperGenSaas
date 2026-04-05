@@ -18,7 +18,11 @@ export class SchoolRequest {
   email: string;
 
   @Column({ nullable: true })
+  contactPerson: string;
+
+  @Column({ nullable: true })
   phone: string;
+
 
   @Column({ nullable: true })
   city: string;

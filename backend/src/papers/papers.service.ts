@@ -23,27 +23,39 @@ export class PapersService {
   ) {}
 
   async create(createPaperDto: any, user: any): Promise<Paper> {
-    if (user.schoolId) {
-      // Check existing paper count for the school
-      const paperCount = await this.papersRepository.count({
-        where: { schoolId: user.schoolId }
-      });
+    const userId = user.id || user.userId;
+    const schoolId = user.schoolId;
 
-      // Bypass subscription check for the first 5 papers (Free Tier)
-      const isFreeTier = paperCount < 5;
+    // 1. Check if user has an active subscription
+    const hasActive = await this.subscriptionsService.hasActiveSubscription({ schoolId, userId });
+    
+    // Super Admin is exempt
+    if (user.role !== UserRole.SUPER_ADMIN) {
+      if (!hasActive) {
+        throw new ForbiddenException('An active subscription is required to generate papers. Please upgrade your plan.');
+      }
 
-      if (!isFreeTier) {
-        const subscription = await this.subscriptionsService.findBySchool(user.schoolId);
-        if (!subscription || !subscription.status) {
-          throw new ForbiddenException('You have used your 5 free papers. A valid subscription is required to create more.');
+      // 2. Check paper limit
+      const subscription = schoolId 
+        ? await this.subscriptionsService.findBySchool(schoolId)
+        : await this.subscriptionsService.findByUser(userId);
+
+      if (subscription && subscription.paperLimit !== -1) {
+        const paperCountQuery = this.papersRepository.createQueryBuilder('paper');
+        if (schoolId) {
+          paperCountQuery.where('paper.schoolId = :schoolId', { schoolId });
+        } else {
+          paperCountQuery.where('paper.teacherId = :userId', { userId });
         }
+        
+        const paperCount = await paperCountQuery.getCount();
 
-        // Check subscription-specific paper limit
-        if (subscription.paperLimit !== -1 && paperCount >= subscription.paperLimit) {
-          throw new ForbiddenException('Paper generation limit reached for your current plan.');
+        if (paperCount >= subscription.paperLimit) {
+          throw new ForbiddenException(`Paper generation limit reached for your ${subscription.planName} plan. Please upgrade to continue.`);
         }
       }
     }
+
 
     const { paperQuestions, ...paperData } = createPaperDto;
 

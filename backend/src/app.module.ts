@@ -17,9 +17,11 @@ import { SeedModule } from './seed/seed.module';
 import { SchoolRequestsModule } from './school-requests/school-requests.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { MailModule } from './mail/mail.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
+
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -69,8 +71,10 @@ import { MailModule } from './mail/mail.module';
     SchoolRequestsModule,
     TeachersModule,
     MailModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
+
   providers: [AppService],
 })
 export class AppModule {}

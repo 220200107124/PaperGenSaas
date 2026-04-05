@@ -17,43 +17,50 @@ export class SubscriptionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Bypass subscription check (Development/Request)
-    return true;
-
-    /*
     const requiredPermission = this.reflector.getAllAndOverride<string>(PERMISSIONS_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
+    const { user } = context.switchToHttp().getRequest();
+    
+    // Super Admin has all permissions
+    if (user && user.role === UserRole.SUPER_ADMIN) {
+      return true;
+    }
+
+    if (!user) {
+      return false;
+    }
+
+    const hasActive = await this.subscriptionsService.hasActiveSubscription({ 
+      schoolId: user.schoolId, 
+      userId: user.userId || user.id 
+    });
+
+    if (!hasActive) {
+      throw new ForbiddenException('You do not have an active subscription.');
+    }
+
     if (!requiredPermission) {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
-    
-    // Super Admin has all permissions
-    if (user.role === UserRole.SUPER_ADMIN) {
-      return true;
-    }
+    const subscription = user.schoolId 
+      ? await this.subscriptionsService.findBySchool(user.schoolId)
+      : await this.subscriptionsService.findByUser(user.userId || user.id);
 
-    if (!user.schoolId) {
-      throw new ForbiddenException('User is not associated with any school.');
-    }
-
-    const subscription = await this.subscriptionsService.findBySchool(user.schoolId);
-
-    if (!subscription || !subscription.status) {
-      throw new ForbiddenException('School does not have an active subscription.');
+    if (!subscription) {
+      throw new ForbiddenException('Subscription not found.');
     }
 
     const permissions = subscription.modulePermissions || {};
 
     if (!permissions[requiredPermission]) {
-      throw new ForbiddenException('Your subscription plan does not allow this feature.');
+      throw new ForbiddenException(`Your subscription plan does not allow access to ${requiredPermission}.`);
     }
 
     return true;
-    */
   }
 }
+

@@ -85,9 +85,13 @@ export class QuestionsService {
     return this.findOne(id);
   }
 
-
+  async bulkCreate(questions: any[]): Promise<Question[]> {
+    const newQuestions = this.questionsRepository.create(questions);
+    return await this.questionsRepository.save(newQuestions);
+  }
 
   async remove(id: string): Promise<void> {
+
     const usageCount = await this.paperQuestionRepository.count({ where: { questionId: id } });
     if (usageCount > 0) {
       throw new BadRequestException('This question is currently used in one or more papers and cannot be deleted.');

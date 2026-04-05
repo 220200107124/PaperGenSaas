@@ -90,7 +90,9 @@ export class MailService {
 
   async sendVerificationEmail(email: string, token: string) {
     const subject = 'Verify your email - paperGeneration';
-    const verifyUrl = `http://localhost:5173/verify-email?token=${token}`;
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    const verifyUrl = `${frontendUrl}/verify-email?token=${token}`;
+
     const html = `
       <h1>Email Verification</h1>
       <p>Thank you for registering. Please click the link below to verify your email address:</p>

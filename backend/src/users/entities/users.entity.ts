@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { School } from '../../schools/entities/schools.entity';
 
 export enum UserRole {
@@ -8,7 +8,9 @@ export enum UserRole {
 }
 
 @Entity('users')
+@Unique(['schoolId', 'subjectId'])
 export class User {
+
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

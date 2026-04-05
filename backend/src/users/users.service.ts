@@ -21,8 +21,9 @@ export class UsersService {
     return await this.usersRepository.save(newUser as any);
   }
 
-  async findAll(paginationDto: PaginationDto & { role?: any, schoolId?: string, status?: string }): Promise<any> {
-    const { page = 1, limit = 10, search, sortBy, order = 'ASC', role, schoolId, status } = paginationDto;
+  async findAll(paginationDto: PaginationDto & { role?: any, schoolId?: string, status?: string, subjectId?: string }): Promise<any> {
+    const { page = 1, limit = 10, search, sortBy, order = 'ASC', role, schoolId, status, subjectId } = paginationDto;
+
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
@@ -38,6 +39,11 @@ export class UsersService {
     if (schoolId) {
       queryBuilder.andWhere('user.schoolId = :schoolId', { schoolId });
     }
+
+    if (subjectId) {
+      queryBuilder.andWhere('user.subjectId = :subjectId', { subjectId });
+    }
+
 
     if (search) {
       queryBuilder.andWhere('(user.name ILIKE :search OR user.email ILIKE :search)', {
