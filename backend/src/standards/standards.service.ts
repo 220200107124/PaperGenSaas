@@ -24,10 +24,12 @@ export class StandardsService {
 
     const queryBuilder = this.standardsRepository.createQueryBuilder('standard');
 
-    if (user.role !== UserRole.SUPER_ADMIN) {
+    if (user && user.role !== UserRole.SUPER_ADMIN) {
       queryBuilder.where('(standard.schoolId = :schoolId OR standard.schoolId IS NULL)', {
         schoolId: user.schoolId,
       });
+    } else if (!user) {
+      queryBuilder.where('standard.schoolId IS NULL');
     }
 
     if (search) {
@@ -46,6 +48,10 @@ export class StandardsService {
       .getManyAndCount();
 
     return createPaginationResponse(data, totalRecords, page, limit);
+  }
+
+  async findAllPublic(paginationDto: PaginationDto) {
+     return this.findAll(null, paginationDto);
   }
 
   async findOne(id: string): Promise<Standard | null> {

@@ -10,11 +10,11 @@ import { UserRole } from '../users/entities/users.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('subjects')
-@UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
 export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN)
   async create(@Body() createSubjectDto: any) {
     const subject = await this.subjectsService.create(createSubjectDto);
@@ -25,12 +25,19 @@ export class SubjectsController {
     };
   }
 
+  @Get('public')
+  async findAllPublic(@Query() paginationDto: PaginationDto & { standardId?: string }) {
+    return await this.subjectsService.findAllPublic(paginationDto);
+  }
+
   @Get()
-  async findAll(@GetUser() user: any, @Query() paginationDto: PaginationDto) {
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+  async findAll(@GetUser() user: any, @Query() paginationDto: PaginationDto & { standardId?: string }) {
     return await this.subjectsService.findAll(user, paginationDto);
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   async findOne(@Param('id') id: string) {
     const subject = await this.subjectsService.findOne(id);
     if (!subject) throw new NotFoundException('Subject not found');
@@ -42,6 +49,7 @@ export class SubjectsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN)
   async update(@Param('id') id: string, @Body() updateData: any) {
     const subject = await this.subjectsService.update(id, updateData);
@@ -53,6 +61,7 @@ export class SubjectsController {
   }
 
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN)
   async updateStatus(@Param('id') id: string, @Body('status') status: boolean) {
     const subject = await this.subjectsService.update(id, { status });
@@ -64,6 +73,7 @@ export class SubjectsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN)
   async remove(@Param('id') id: string) {
     await this.subjectsService.remove(id);

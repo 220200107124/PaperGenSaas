@@ -14,6 +14,9 @@ export class Subscription {
   @JoinColumn({ name: 'schoolId' })
   school: School;
 
+  @Column({ default: 'school' })
+  type: string; // 'school' or 'teacher'
+
   @Column({ nullable: true })
   userId: string;
 
@@ -23,6 +26,12 @@ export class Subscription {
 
   @Column()
   planName: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  price: number;
+
+  @Column({ default: 'INR' })
+  currency: string;
 
   @Column({ default: 0 })
   paperLimit: number;
@@ -50,6 +59,12 @@ export class Subscription {
 
   @Column({ nullable: true })
   razorpaySignature: string;
+
+  @Column({ nullable: true })
+  paypalOrderId: string;
+
+  @Column({ nullable: true })
+  paypalCaptureId: string;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -25,10 +25,12 @@ export class SubjectsService {
     const queryBuilder = this.subjectsRepository.createQueryBuilder('subject')
       .leftJoinAndSelect('subject.standard', 'standard');
 
-    if (user.role !== UserRole.SUPER_ADMIN) {
+    if (user && user.role !== UserRole.SUPER_ADMIN) {
       queryBuilder.where('(subject.schoolId = :schoolId OR subject.schoolId IS NULL)', {
         schoolId: user.schoolId,
       });
+    } else if (!user) {
+      queryBuilder.where('subject.schoolId IS NULL');
     }
 
     if (standardId) {
@@ -51,6 +53,10 @@ export class SubjectsService {
       .getManyAndCount();
 
     return createPaginationResponse(data, totalRecords, page, limit);
+  }
+
+  async findAllPublic(paginationDto: PaginationDto & { standardId?: string }) {
+    return this.findAll(null, paginationDto);
   }
 
   async findOne(id: string): Promise<Subject | null> {

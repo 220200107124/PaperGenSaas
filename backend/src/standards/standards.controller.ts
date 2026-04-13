@@ -10,11 +10,11 @@ import { UserRole } from '../users/entities/users.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('standards')
-@UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
 export class StandardsController {
   constructor(private readonly standardsService: StandardsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN)
   async create(@Body() createStandardDto: CreateStandardDto) {
     const standard = await this.standardsService.create(createStandardDto);
@@ -25,12 +25,19 @@ export class StandardsController {
     };
   }
 
+  @Get('public')
+  async findAllPublic(@Query() paginationDto: PaginationDto) {
+    return await this.standardsService.findAllPublic(paginationDto);
+  }
+
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   async findAll(@GetUser() user: any, @Query() paginationDto: PaginationDto) {
     return await this.standardsService.findAll(user, paginationDto);
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   async findOne(@Param('id') id: string) {
     const standard = await this.standardsService.findOne(id);
     if (!standard) throw new NotFoundException('Standard not found');
@@ -42,6 +49,7 @@ export class StandardsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN)
   async update(@Param('id') id: string, @Body() updateData: any) {
     const standard = await this.standardsService.update(id, updateData);
@@ -53,6 +61,7 @@ export class StandardsController {
   }
 
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN)
   async updateStatus(@Param('id') id: string, @Body('status') status: boolean) {
     const standard = await this.standardsService.update(id, { status });
@@ -64,6 +73,7 @@ export class StandardsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN)
   async remove(@Param('id') id: string) {
     await this.standardsService.remove(id);

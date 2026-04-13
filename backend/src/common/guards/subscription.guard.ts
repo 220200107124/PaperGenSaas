@@ -33,30 +33,24 @@ export class SubscriptionGuard implements CanActivate {
       return false;
     }
 
-    const hasActive = await this.subscriptionsService.hasActiveSubscription({ 
+    const subscription = await this.subscriptionsService.getActiveSubscription({ 
       schoolId: user.schoolId, 
       userId: user.userId || user.id 
     });
 
-    if (!hasActive) {
-      throw new ForbiddenException('You do not have an active subscription.');
+    if (!subscription) {
+      throw new ForbiddenException('Subscription not found or inactive.');
     }
 
     if (!requiredPermission) {
       return true;
     }
 
-    const subscription = user.schoolId 
-      ? await this.subscriptionsService.findBySchool(user.schoolId)
-      : await this.subscriptionsService.findByUser(user.userId || user.id);
+    const permissions = subscription.modulePermissions;
 
-    if (!subscription) {
-      throw new ForbiddenException('Subscription not found.');
-    }
-
-    const permissions = subscription.modulePermissions || {};
-
-    if (!permissions[requiredPermission]) {
+    // If permissions array is entirely missing (e.g. older legacy plans), we default to allowing access to avoid locking users out.
+    // Otherwise, we strictly check for the required permission.
+    if (permissions && permissions[requiredPermission] === false) {
       throw new ForbiddenException(`Your subscription plan does not allow access to ${requiredPermission}.`);
     }
 
