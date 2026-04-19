@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Mail, ShieldCheck, ChevronRight, User as UserIcon, Lock, Trash2, Edit2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Mail, ShieldCheck, ChevronRight, User as UserIcon, Lock, Trash2, Edit2, BookOpen } from 'lucide-react';
 import { usePagination } from '../../hooks/usePagination';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
@@ -10,10 +10,16 @@ import * as Yup from 'yup';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import type { User } from '../../types';
+import { masterDataService, type Subject } from '../../api/masterDataService';
 
 const TeachersPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTeacher, setEditingTeacher] = useState<User | null>(null);
+    const [subjects, setSubjects] = useState<Subject[]>([]);
+
+    useEffect(() => {
+        masterDataService.getSubjects().then(setSubjects).catch(() => {});
+    }, []);
 
     const {
         data,
@@ -35,12 +41,14 @@ const TeachersPage: React.FC = () => {
             name: '',
             email: '',
             password: '',
+            subjectId: '',
             isActive: true,
         },
         validationSchema: Yup.object({
             name: Yup.string().required('Required').min(2, 'Too short'),
             email: Yup.string().email('Invalid email').required('Required'),
             password: editingTeacher ? Yup.string() : Yup.string().required('Required').min(6, 'Too short'),
+            subjectId: Yup.string().required('Please select a subject'),
             isActive: Yup.boolean(),
         }),
         onSubmit: async (values) => {
@@ -73,6 +81,7 @@ const TeachersPage: React.FC = () => {
             name: teacher.name,
             email: teacher.email,
             password: '',
+            subjectId: teacher.subjectId || '',
             isActive: teacher.isActive,
         });
         setIsModalOpen(true);
@@ -286,6 +295,30 @@ const TeachersPage: React.FC = () => {
                                 {...formik.getFieldProps('password')}
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-black text-gray-700 uppercase tracking-widest ml-1">Assigned Subject</label>
+                        <div className="relative group">
+                            <BookOpen className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-brand-blue transition-colors" />
+                            <select
+                                className="w-full pl-16 pr-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold appearance-none focus:outline-none focus:ring-4 focus:ring-brand-blue/5 focus:bg-white focus:border-brand-blue/20 transition-all"
+                                {...formik.getFieldProps('subjectId')}
+                            >
+                                <option value="" disabled>Select a Subject</option>
+                                {subjects.map(s => {
+                                    const isAssigned = data.some(t => t.subjectId === s.id && t.id !== editingTeacher?.id);
+                                    return (
+                                        <option key={s.id} value={s.id} disabled={isAssigned}>
+                                            {s.name} {s.standard?.name ? `(${s.standard.name})` : ''} {isAssigned ? '- Already Assigned' : ''}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                        </div>
+                        {formik.touched.subjectId && formik.errors.subjectId && (
+                             <p className="text-red-500 text-xs mt-1 ml-2 font-bold">{formik.errors.subjectId}</p>
+                        )}
                     </div>
 
                     <div className="flex items-center justify-between p-6 bg-gray-50 rounded-[2rem]">

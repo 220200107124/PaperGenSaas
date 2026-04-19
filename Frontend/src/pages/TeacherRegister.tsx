@@ -1,53 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Loader2, BookOpen, GraduationCap } from 'lucide-react';
+import { Mail, Lock, User, Loader2 } from 'lucide-react';
 import { authService } from '../api/authService';
-import { masterDataService } from '../api/masterDataService';
-import type { Standard, Subject } from '../api/masterDataService';
 
 const TeacherRegister: React.FC = () => {
 
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        password: '',
-        standardId: '',
-        subjectId: ''
+        password: ''
     });
-    const [standards, setStandards] = useState<Standard[]>([]);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const navigate = useNavigate();
-
-    useEffect(() => {
-        const fetchStandards = async () => {
-            try {
-                const data = await masterDataService.getStandards();
-                setStandards(data || []);
-            } catch (err) {
-                console.error('Failed to fetch standards');
-            }
-        };
-        fetchStandards();
-    }, []);
-
-    useEffect(() => {
-        if (formData.standardId) {
-            const fetchSubjects = async () => {
-                try {
-                    const data = await masterDataService.getSubjects(formData.standardId);
-                    setSubjects(data || []);
-                } catch (err) {
-                    console.error('Failed to fetch subjects');
-                }
-            };
-            fetchSubjects();
-        } else {
-            setSubjects([]);
-        }
-    }, [formData.standardId]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,10 +21,6 @@ const TeacherRegister: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.subjectId) {
-            setError('Please select a subject');
-            return;
-        }
         setIsLoading(true);
         setError('');
 
@@ -104,26 +66,10 @@ const TeacherRegister: React.FC = () => {
                             <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
                         </div>
 
-                        <div className="relative group">
-                            <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
-                            <select name="standardId" value={formData.standardId} onChange={handleChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all appearance-none" required>
-                                <option value="">Select Standard</option>
-                                {standards.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="relative group">
-                            <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
-                            <select name="subjectId" value={formData.subjectId} onChange={handleChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all appearance-none" required disabled={!formData.standardId}>
-                                <option value="">Select Subject</option>
-                                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
-                            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
-                        </div>
+        <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
+            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
+        </div>
 
                         <button type="submit" disabled={isLoading} className="w-full py-4 bg-brand-blue hover:bg-blue-800 text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-3 transition-all disabled:opacity-70">
                             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Register'}

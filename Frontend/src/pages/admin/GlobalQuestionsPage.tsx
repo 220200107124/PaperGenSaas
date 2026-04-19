@@ -269,12 +269,12 @@ const GlobalQuestionsPage: React.FC = () => {
             });
  
             const extracted = response.data.data.map((q: any) => ({
-                questionText: q.questionText,
-                questionType: q.questionType,
-                difficulty: q.difficulty,
-                marks: q.marks,
-                options: q.options ? [q.options.a, q.options.b, q.options.c, q.options.d] : ['', '', '', ''],
-                answer: q.questionType === QuestionType.MCQ ? ['a', 'b', 'c', 'd'].indexOf(q.answer).toString() : q.answer,
+                questionText: q.questionText || '',
+                questionType: q.questionType || QuestionType.SHORT,
+                difficulty: q.difficulty || Difficulty.MEDIUM,
+                marks: q.marks || 1,
+                options: q.options ? [q.options.a || '', q.options.b || '', q.options.c || '', q.options.d || ''] : ['', '', '', ''],
+                answer: (q.questionType === QuestionType.MCQ || !q.questionType) ? (['a', 'b', 'c', 'd'].indexOf(q.answer)?.toString() || '0') : (q.answer || ''),
                 status: 'pending'
             }));
  

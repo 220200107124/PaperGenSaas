@@ -21,6 +21,7 @@ import TeacherRequestsPage from './pages/admin/TeacherRequestsPage';
 import StandardsManagementPage from './pages/admin/StandardsManagementPage';
 import SubjectsManagementPage from './pages/admin/SubjectsManagementPage';
 import ChaptersManagementPage from './pages/admin/ChaptersManagementPage';
+import PlansPage from './pages/admin/PlansPage';
 import SchoolDashboard from './pages/school/SchoolDashboard';
 import TeachersPage from './pages/school/TeachersPage';
 import SchoolQuestionsPage from './pages/school/SchoolQuestionsPage';
@@ -59,6 +60,7 @@ const App: React.FC = () => {
             <Route path="questions" element={<GlobalQuestionsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
+            <Route path="plans" element={<PlansPage />} />
           </Route>
 
           {/* School Admin Routes */}
@@ -84,7 +86,7 @@ const App: React.FC = () => {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={3000} style={{ zIndex: 999999 }} />
     </BrowserRouter>
   );
 };

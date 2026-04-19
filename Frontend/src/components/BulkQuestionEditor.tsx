@@ -33,8 +33,14 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
             formData.append('subjectId', subjectId);
             
             const questions = await questionService.extractFromPdf(formData);
-            setExtractedQuestions(questions);
-            toast.success(`Extracted ${questions.length} questions successfully!`);
+            const sanitizedQuestions = questions.map(q => ({
+                ...q,
+                questionType: q.questionType || q.type || QuestionType.SHORT,
+                difficulty: q.difficulty || Difficulty.MEDIUM,
+                marks: q.marks || 1,
+            }));
+            setExtractedQuestions(sanitizedQuestions);
+            toast.success(`Extracted ${sanitizedQuestions.length} questions successfully!`);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to extract questions');
         } finally {

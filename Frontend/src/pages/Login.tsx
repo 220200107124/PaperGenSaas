@@ -46,7 +46,11 @@ const Login: React.FC = () => {
 
         } catch (err: any) {
             console.error('Login error:', err);
-            setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+            if (!err.response) {
+                setError('Unable to reach the server. It might be sleeping or offline. Please wait 1-2 minutes and try again.');
+            } else {
+                setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }

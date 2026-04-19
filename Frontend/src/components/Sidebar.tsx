@@ -44,6 +44,7 @@ const Sidebar: React.FC = () => {
             { name: 'Global Questions', path: '/admin/questions', icon: Globe },
             { name: 'Users', path: '/admin/users', icon: Users },
             { name: 'Subscriptions', path: '/admin/subscriptions', icon: CreditCard },
+            { name: 'Plans', path: '/admin/plans', icon: FileText },
         ],
         [UserRole.SCHOOL_ADMIN]: [
             { name: 'Dashboard', path: '/school/dashboard', icon: LayoutDashboard },
@@ -51,18 +52,28 @@ const Sidebar: React.FC = () => {
             { name: 'Question Bank', path: '/school/questions', icon: BookOpen },
             { name: 'Create Paper', path: '/school/create-paper', icon: PlusCircle },
             { name: 'My Papers', path: '/school/papers', icon: FileText },
+            { name: 'Subscription', path: '/pricing', icon: CreditCard },
         ],
         [UserRole.TEACHER]: [
             { name: 'Dashboard', path: '/teacher/dashboard', icon: LayoutDashboard },
             { name: 'Question Bank', path: '/teacher/questions', icon: BookOpen },
             { name: 'Create Paper', path: '/teacher/create-paper', icon: PlusCircle },
             { name: 'My Papers', path: '/teacher/papers', icon: FileEdit },
+            { name: 'Subscription', path: '/pricing', icon: CreditCard },
         ],
     };
 
     if (!user) return null;
 
-    const activeRoleItems = menuItems[user.role] || [];
+    let activeRoleItems = menuItems[user.role] || [];
+
+    if (!user.hasActiveSubscription && user.role !== UserRole.SUPER_ADMIN) {
+        const dashboardPath = user.role === UserRole.SCHOOL_ADMIN ? '/school/dashboard' : '/teacher/dashboard';
+        activeRoleItems = [
+            { name: 'Dashboard', path: dashboardPath, icon: LayoutDashboard },
+            { name: 'Subscription', path: '/pricing', icon: CreditCard },
+        ];
+    }
 
     return (
         <aside className={clsx(
