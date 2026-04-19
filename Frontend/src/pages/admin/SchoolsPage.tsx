@@ -11,6 +11,8 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import type { School as SchoolType } from '../../types';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+
 const SchoolsPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSchool, setEditingSchool] = useState<SchoolType | null>(null);
@@ -26,9 +28,11 @@ const SchoolsPage: React.FC = () => {
         pagination,
         refresh,
     } = usePagination<SchoolType>({
-        url: `${import.meta.env.VITE_API_URL}/schools`,
+        url: `${API_BASE_URL}/schools`,
         initialLimit: 10,
     });
+
+    const safeData = Array.isArray(data) ? data : [];
 
     const formik = useFormik({
         initialValues: {
@@ -49,12 +53,12 @@ const SchoolsPage: React.FC = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (editingSchool) {
-                    await axios.patch(`${import.meta.env.VITE_API_URL}/schools/${editingSchool.id}`, values, {
+                    await axios.patch(`${API_BASE_URL}/schools/${editingSchool.id}`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('School updated successfully');
                 } else {
-                    await axios.post(`${import.meta.env.VITE_API_URL}/schools`, values, {
+                    await axios.post(`${API_BASE_URL}/schools`, values, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     toast.success('School created successfully');
@@ -85,7 +89,7 @@ const SchoolsPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this school? This action cannot be undone.')) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${import.meta.env.VITE_API_URL}/schools/${id}`, {
+            await axios.delete(`${API_BASE_URL}/schools/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('School deleted successfully');
@@ -98,7 +102,7 @@ const SchoolsPage: React.FC = () => {
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`${import.meta.env.VITE_API_URL}/schools/${id}`, { status: !currentStatus }, {
+            await axios.patch(`${API_BASE_URL}/schools/${id}`, { status: !currentStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             refresh();
@@ -212,14 +216,14 @@ const SchoolsPage: React.FC = () => {
                     </div>
                     <div>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Plans</p>
-                        <p className="text-2xl font-black text-gray-900">{data.filter(s => s.status).length}</p>
+                        <p className="text-2xl font-black text-gray-900">{safeData.filter(s => s.status).length}</p>
                     </div>
                 </div>
             </div>
 
             <DataTable
                 columns={columns}
-                data={data}
+                data={safeData}
                 isLoading={loading}
                 onSearch={setSearch}
                 onRefresh={refresh}

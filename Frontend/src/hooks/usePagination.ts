@@ -54,8 +54,9 @@ export function usePagination<T>({
             // Handle both structure: { success, data, pagination } and { data, pagination }
             const responseData = response.data.data !== undefined ? response.data.data : response.data;
             const paginationData = response.data.pagination;
+            const normalizedData = Array.isArray(responseData) ? responseData : [];
 
-            setData(responseData);
+            setData(normalizedData);
             setPagination(paginationData);
             setError(null);
         } catch (err: any) {

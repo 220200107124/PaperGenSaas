@@ -21,6 +21,7 @@ const Pricing: React.FC = () => {
                 setPlans(data);
             } catch (err) {
                 toast.error('Failed to load subscription plans');
+                console.log(err)
             } finally {
                 setIsLoading(false);
             }

@@ -10,7 +10,7 @@ interface Column<T> {
 
 interface DataTableProps<T> {
     columns: Column<T>[];
-    data: T[];
+    data?: T[] | null;
     isLoading?: boolean;
     onSearch?: (query: string) => void;
     onFilterClick?: () => void;
@@ -36,6 +36,8 @@ function DataTable<T extends { id: string | number }>({
     pagination,
     emptyState,
 }: DataTableProps<T>) {
+    const safeData = Array.isArray(data) ? data : [];
+
     return (
         <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/30 overflow-hidden flex flex-col min-h-[400px]">
             {/* Table Header / Actions */}
@@ -92,8 +94,8 @@ function DataTable<T extends { id: string | number }>({
             </div>
 
             {/* Table Content */}
-            <div className="overflow-x-auto flex-1">
-                <table className="w-full text-left">
+            <div className="overflow-x-auto flex-1 w-full relative">
+                <table className="w-full text-left min-w-[800px]">
                     <thead className="bg-gray-50/50">
                         <tr>
                             {columns.map((column, idx) => (
@@ -120,8 +122,8 @@ function DataTable<T extends { id: string | number }>({
                                     ))}
                                 </tr>
                             ))
-                        ) : data.length > 0 ? (
-                            data.map((item) => (
+                        ) : safeData.length > 0 ? (
+                            safeData.map((item) => (
                                 <tr key={item.id} className="hover:bg-gray-50/80 transition-colors group cursor-default">
                                     {columns.map((column, idx) => (
                                         <td key={idx} className={clsx("px-8 py-6", column.className)}>

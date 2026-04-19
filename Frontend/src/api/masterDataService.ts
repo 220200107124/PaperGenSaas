@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import apiClient, { publicApiClient } from './apiClient';
 
 export interface Standard {
   id: string;
@@ -19,7 +19,7 @@ export interface Chapter {
 
 export const masterDataService = {
   getStandards: async (): Promise<Standard[]> => {
-    const response = await apiClient.get<{ data: Standard[] }>('/standards');
+    const response = await publicApiClient.get<{ data: Standard[] }>('/standards/public');
     return response.data.data;
   },
 
@@ -29,7 +29,7 @@ export const masterDataService = {
   },
 
   getSubjects: async (standardId?: string): Promise<Subject[]> => {
-    const response = await apiClient.get<{ data: Subject[] }>('/subjects', {
+    const response = await publicApiClient.get<{ data: Subject[] }>('/subjects/public', {
       params: { standardId },
     });
     return response.data.data;
@@ -41,7 +41,7 @@ export const masterDataService = {
   },
 
   getChapters: async (subjectId?: string): Promise<Chapter[]> => {
-    const response = await apiClient.get<{ data: Chapter[] }>('/chapters', {
+    const response = await publicApiClient.get<{ data: Chapter[] }>('/chapters', {
       params: { subjectId },
     });
     return response.data.data;
