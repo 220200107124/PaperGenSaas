@@ -45,8 +45,11 @@ export class Subscription {
   @Column({ nullable: true })
   endDate: Date;
 
-  @Column({ default: true })
-  status: boolean;
+  @Column({ nullable: true })
+  planId: string;
+
+  @Column({ default: 'PENDING' })
+  status: string; // 'PENDING' | 'ACTIVE'
 
   @Column({ type: 'jsonb', nullable: true })
   modulePermissions: any;

@@ -76,7 +76,7 @@ export class SubscriptionsService {
       teacherLimit: freePlan ? freePlan.teacherLimit : 1,
       startDate,
       endDate,
-      status: true,
+      status: 'ACTIVE',
       modulePermissions: freePlan ? freePlan.modulePermissions : {
         paperModule: true,
         teacherModule: true,
@@ -98,29 +98,31 @@ export class SubscriptionsService {
     userId?: string; 
     schoolId?: string; 
     type: 'school' | 'teacher';
-    planName: string;
+    planId?: string;
+    planName?: string;
     razorpayOrderId?: string;
     razorpayPaymentId?: string;
     razorpaySignature?: string;
     paypalOrderId?: string;
     paypalCaptureId?: string;
   }) {
-    const { userId, schoolId, type, planName, razorpayOrderId, razorpayPaymentId, razorpaySignature, paypalOrderId, paypalCaptureId } = data;
+    const { userId, schoolId, type, planId, planName, razorpayOrderId, razorpayPaymentId, razorpaySignature, paypalOrderId, paypalCaptureId } = data;
 
     // Fetch plan details from DB
-    let plan = await this.plansService.findByName(planName);
+    let plan = planId ? await this.plansService.findOne(planId) : (planName ? await this.plansService.findByName(planName) : null);
     
     // In test bypass mode, if a plan isn't seeded, gracefully fall back to a mock plan.
     if (!plan && paypalOrderId === 'TEST_MODE_BYPASS') {
        plan = {
-         name: planName,
+         id: 'mock-plan-id',
+         name: planName || 'TEST_PLAN',
          price: 999,
          paperLimit: 500,
          teacherLimit: 10,
          modulePermissions: { paperModule: true, teacherModule: true, questionModule: true, aiModule: true }
        } as any;
     } else if (!plan) {
-      throw new Error(`Plan ${planName} not found in system.`);
+      throw new Error(`Plan not found in system.`);
     }
 
     const startDate = new Date();
@@ -131,14 +133,15 @@ export class SubscriptionsService {
       userId,
       schoolId,
       type,
+      planId: plan!.id,
       planName: plan!.name,
-      price: paypalOrderId && paypalOrderId !== 'TEST_MODE_BYPASS' ? Number((plan!.price / 83).toFixed(2)) : plan!.price,
-      currency: paypalOrderId && paypalOrderId !== 'TEST_MODE_BYPASS' ? 'USD' : 'INR',
+      price: paypalOrderId && !paypalOrderId.startsWith('FREE_PLAN_') ? Number((plan!.price / 83).toFixed(2)) : plan!.price,
+      currency: paypalOrderId && !paypalOrderId.startsWith('FREE_PLAN_') ? 'USD' : 'INR',
       paperLimit: plan!.paperLimit,
       teacherLimit: plan!.teacherLimit,
       startDate,
       endDate,
-      status: true,
+      status: 'ACTIVE',
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
@@ -147,6 +150,7 @@ export class SubscriptionsService {
       modulePermissions: plan!.modulePermissions
     });
 
+    console.log(`[SubscriptionsService] Activating ${plan!.name} for ${type} ${schoolId || userId}. Status: ACTIVE`);
     return await this.subscriptionsRepository.save(subscription);
   }
 
@@ -174,7 +178,7 @@ export class SubscriptionsService {
     if (!subscription) return null;
     
     const now = new Date();
-    const isActive = subscription.status && 
+    const isActive = subscription.status === 'ACTIVE' && 
            (!subscription.startDate || subscription.startDate <= now) && 
            (!subscription.endDate || subscription.endDate >= now);
     
