@@ -33,12 +33,15 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
             formData.append('subjectId', subjectId);
             
             const questions = await questionService.extractFromPdf(formData);
-            const sanitizedQuestions = questions.map(q => ({
-                ...q,
-                questionType: q.questionType || q.type || QuestionType.SHORT,
-                difficulty: q.difficulty || Difficulty.MEDIUM,
-                marks: q.marks || 1,
-            }));
+            const sanitizedQuestions = questions.map(q => {
+                const { type, ...rest } = q;
+                return {
+                    ...rest,
+                    questionType: q.questionType || type || QuestionType.SHORT,
+                    difficulty: q.difficulty || Difficulty.MEDIUM,
+                    marks: q.marks || 1,
+                };
+            });
             setExtractedQuestions(sanitizedQuestions);
             toast.success(`Extracted ${sanitizedQuestions.length} questions successfully!`);
         } catch (err: any) {
@@ -63,7 +66,7 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
             ...prev,
             {
                 questionText: '',
-                type: QuestionType.MCQ,
+                questionType: QuestionType.MCQ,
                 difficulty: Difficulty.MEDIUM,
                 marks: 1,
                 options: ['', '', '', ''],
@@ -193,8 +196,15 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Type</label>
                                             <select 
-                                                value={q.type}
-                                                onChange={(e) => handleUpdateQuestion(index, { type: e.target.value })}
+                                                value={q.questionType}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const updates: any = { questionType: val };
+                                                    if (val === QuestionType.MCQ && (!q.options || !Array.isArray(q.options))) {
+                                                        updates.options = ['', '', '', ''];
+                                                    }
+                                                    handleUpdateQuestion(index, updates);
+                                                }}
                                                 className="w-full bg-gray-50 border-0 rounded-xl px-4 py-2 text-xs font-bold"
                                             >
                                                 {Object.values(QuestionType).map(t => <option key={t} value={t}>{t}</option>)}
@@ -221,7 +231,7 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                                         </div>
                                     </div>
 
-                                    {q.type === QuestionType.MCQ && q.options && (
+                                    {q.questionType === QuestionType.MCQ && q.options && (
                                         <div className="pt-6 space-y-3">
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Options & Answer</label>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

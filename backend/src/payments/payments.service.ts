@@ -1,53 +1,62 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
-const paypal = require('@paypal/checkout-server-sdk');
+import * as crypto from 'crypto';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Razorpay = require('razorpay');
 
 @Injectable()
 export class PaymentsService {
+  private razorpay;
+
   constructor(
     private configService: ConfigService,
     private subscriptionsService: SubscriptionsService,
-  ) {}
+  ) {
+    const key_id = (this.configService.get<string>('RAZORPAY_KEY_ID') || 'rzp_test_SfOyyf52Uj3eHK').trim();
+    const key_secret = (this.configService.get<string>('RAZORPAY_KEY_SECRET') || '34ZsTIjp3HImEtzaxwVoqN6N').trim();
+    
+    this.razorpay = new Razorpay({
+      key_id,
+      key_secret,
+    });
+  }
 
   async createOrder(amount: number) {
-    console.log(`[PaymentsService] Creating PayPal order for amount: ${amount} USD`);
-    const clientId = this.configService.get<string>('PAYPAL_CLIENT_ID');
-    const clientSecret = this.configService.get<string>('PAYPAL_CLIENT_SECRET');
+    console.log(`[PaymentsService] Creating Razorpay order for amount: ${amount} INR`);
 
-    if (!clientId || !clientSecret) {
-      console.error('[PaymentsService] Missing PayPal credentials');
-      throw new BadRequestException('PayPal is not configured on the server.');
-    }
-
-    const environment = new paypal.core.SandboxEnvironment(clientId, clientSecret);
-    const client = new paypal.core.PayPalHttpClient(environment);
-
-    const request = new paypal.orders.OrdersCreateRequest();
-    request.requestBody({
-      intent: 'CAPTURE',
-      purchase_units: [{
-        amount: {
-          currency_code: 'USD',
-          value: amount.toString(),
-        },
-      }],
-    });
+    const options = {
+      amount: Math.round(amount * 100), // amount in the smallest currency unit (paise), strictly integer
+      currency: 'INR',
+      receipt: `receipt_${Date.now()}`
+    };
 
     try {
-      const order = await client.execute(request);
-      console.log(`[PaymentsService] Order created: ${order.result.id}`);
-      return { orderId: order.result.id };
+      const order = await this.razorpay.orders.create(options);
+      console.log(`[PaymentsService] Order created: ${order.id}`);
+      return { 
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency
+      };
     } catch (error) {
-      console.error('[PaymentsService] PayPal order creation failed:', error.message || error);
-      throw new BadRequestException('PayPal order creation failed: ' + (error.message || 'Unknown error'));
+      console.error('[PaymentsService] Razorpay order creation failed:', error);
+      throw new BadRequestException('Razorpay order creation failed: ' + (error.message || 'Unknown error'));
     }
   }
 
-  async captureOrder(orderId: string, userId: string, planId: string, schoolId?: string, type: 'teacher' | 'school' = 'teacher') {
-    console.log(`[PaymentsService] Capturing order: ${orderId} for userId: ${userId}, planId: ${planId}`);
+  async captureOrder(
+      orderId: string, 
+      paymentId: string, 
+      signature: string, 
+      userId: string, 
+      planId: string, 
+      schoolId?: string, 
+      type: 'teacher' | 'school' = 'teacher'
+  ) {
+    console.log(`[PaymentsService] Verifying order: ${orderId} for userId: ${userId}, planId: ${planId}`);
     
-    // Handle FREE plan activation directly without PayPal call
+    // Handle FREE plan activation directly
     if (orderId && orderId.startsWith('FREE_PLAN_')) {
         console.log('[PaymentsService] Detected FREE plan activation bypass');
         await this.subscriptionsService.activateSubscription({
@@ -61,49 +70,38 @@ export class PaymentsService {
         return { status: 'COMPLETED', captureId: 'FREE' };
     }
 
-    const clientId = this.configService.get<string>('PAYPAL_CLIENT_ID');
-    const clientSecret = this.configService.get<string>('PAYPAL_CLIENT_SECRET');
+    const keySecret = (this.configService.get<string>('RAZORPAY_KEY_SECRET') || '34ZsTIjp3HImEtzaxwVoqN6N').trim();
 
-    if (!clientId || !clientSecret) {
-      throw new BadRequestException('PayPal is not configured on the server.');
-    }
+    const body = orderId + "|" + paymentId;
 
-    const environment = new paypal.core.SandboxEnvironment(clientId, clientSecret);
-    const client = new paypal.core.PayPalHttpClient(environment);
+    const expectedSignature = crypto
+      .createHmac("sha256", keySecret)
+      .update(body.toString())
+      .digest("hex");
 
-    const request = new paypal.orders.OrdersCaptureRequest(orderId);
-    request.requestBody({});
+    if (expectedSignature === signature) {
+      console.log(`[PaymentsService] Payment verified. Payment ID: ${paymentId}`);
+      
+      await this.subscriptionsService.activateSubscription({
+        userId,
+        schoolId,
+        type,
+        planId,
+        paypalOrderId: orderId,
+        paypalCaptureId: paymentId,
+      });
 
-    try {
-      const capture = await client.execute(request);
-      console.log(`[PaymentsService] Capture status: ${capture.result.status}`);
-
-      if (capture.result.status === 'COMPLETED') {
-        const captureId = capture.result.purchase_units[0].payments.captures[0].id;
-        console.log(`[PaymentsService] Payment captured. ID: ${captureId}`);
-        
-        await this.subscriptionsService.activateSubscription({
-          userId,
-          schoolId,
-          type,
-          planId,
-          paypalOrderId: orderId,
-          paypalCaptureId: captureId,
-        });
-
-        return { status: 'COMPLETED', captureId };
-      } else {
-        console.warn(`[PaymentsService] Capture not completed: ${capture.result.status}`);
-        throw new BadRequestException('PayPal payment not completed');
-      }
-    } catch (error) {
-      console.error('[PaymentsService] PayPal capture failed:', error.message || error);
-      throw new BadRequestException('PayPal capture failed: ' + (error.message || 'Unknown error'));
+      return { status: 'COMPLETED', captureId: paymentId };
+    } else {
+      console.error(`[PaymentsService] Invalid signature`);
+      console.error(`Received orderId: ${orderId}, paymentId: ${paymentId}, signature: ${signature}`);
+      console.error(`Expected: ${expectedSignature}, Body generated: ${body}`);
+      throw new BadRequestException('Invalid signature');
     }
   }
 
   async verifyPayPalPayment(paymentData: any) {
-    const { paypalOrderId, userId, schoolId, planId, type } = paymentData;
-    return this.captureOrder(paypalOrderId, userId, planId, schoolId, type);
+    const { orderId, paymentId, signature, userId, schoolId, planId, type } = paymentData;
+    return this.captureOrder(orderId, paymentId, signature, userId, planId, schoolId, type);
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
@@ -14,7 +14,23 @@ export class PaymentsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('capture-order')
-  async captureOrder(@Body() body: { orderId: string; userId: string; planId: string; schoolId?: string; type: 'teacher' | 'school' }) {
-    return this.paymentsService.captureOrder(body.orderId, body.userId, body.planId, body.schoolId, body.type);
+  async captureOrder(@Body() body: { 
+      orderId: string; 
+      paymentId: string;
+      signature: string;
+      userId: string; 
+      planId: string; 
+      schoolId?: string; 
+      type: 'teacher' | 'school' 
+  }) {
+    return this.paymentsService.captureOrder(
+        body.orderId, 
+        body.paymentId, 
+        body.signature, 
+        body.userId, 
+        body.planId, 
+        body.schoolId, 
+        body.type
+    );
   }
 }

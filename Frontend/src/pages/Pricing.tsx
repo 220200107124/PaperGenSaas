@@ -7,6 +7,25 @@ import { paymentService } from '../api/paymentService';
 import { plansService, type Plan } from '../api/plansService';
 import { toast } from 'react-toastify';
 
+const getRedirectPath = (role: UserRole | undefined, plan?: Plan) => {
+    if (!role) return '/login';
+    const base = role === UserRole.SCHOOL_ADMIN ? '/school' : '/teacher';
+    
+    if (!plan || !plan.modulePermissions) return `${base}/dashboard`;
+    
+    // Priority routing based on modules purchased
+    if (plan.modulePermissions.aiModule || plan.modulePermissions.paperModule) {
+        return `${base}/create-paper`;
+    }
+    if (plan.modulePermissions.questionModule) {
+        return `${base}/questions`;
+    }
+    if (role === UserRole.SCHOOL_ADMIN && plan.modulePermissions.teacherModule) {
+        return `${base}/teachers`;
+    }
+    return `${base}/dashboard`;
+};
+
 const Pricing: React.FC = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
@@ -27,100 +46,88 @@ const Pricing: React.FC = () => {
         fetchPlans();
     }, []);
 
-    const loadPayPal = () => {
+    const loadRazorpay = () => {
         return new Promise((resolve) => {
-            if ((window as any).paypal) {
-                console.log('[PayPal] SDK already loaded');
+            if ((window as any).Razorpay) {
                 return resolve(true);
             }
             const script = document.createElement('script');
-            const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || 'AXVl0H4bkSjzlT_JTPDCwdg1yn8TrkdxpnOwnxIg8Jg_bW1A5SQMclvknZjoifiH_YFSTpG6Qj6tU9MH';
-            console.log(`[PayPal] Loading SDK with ClientID: ${clientId}`);
-            script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
-            script.onload = () => {
-                console.log('[PayPal] SDK loaded successfully');
-                resolve(true);
-            };
-            script.onerror = () => {
-                console.error('[PayPal] SDK load failed');
-                resolve(false);
-            };
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
             document.body.appendChild(script);
         });
     };
 
-    useEffect(() => {
-        if (!isLoading && plans.length > 0) {
-            loadPayPal().then((isLoaded) => {
-                if (isLoaded && (window as any).paypal) {
-                    plans.forEach(plan => {
-                        if (plan.price === 0) return; // Skip PayPal for free plans
-
-                        const containerId = `#paypal-button-container-${plan.id}`;
-                        const container = document.querySelector(containerId);
-                        if (container && !container.innerHTML) {
-                            (window as any).paypal.Buttons({
-                                createOrder: async () => {
-                                    if (!user) {
-                                        navigate('/login');
-                                        return;
-                                    }
-                                    try {
-                                        const amountInUsd = Number((plan.price / 83).toFixed(2));
-                                        console.log(`[PayPal] Initiating order for ${plan.name}: ${amountInUsd} USD (INR ${plan.price})`);
-                                        
-                                        if (amountInUsd <= 0) throw new Error('Invalid amount');
-
-                                        const data = await paymentService.createPayPalOrder({
-                                            amount: amountInUsd
-                                        });
-
-                                        console.log(`[PayPal] Order data received:`, data);
-                                        if (!data || !data.orderId) {
-                                            throw new Error('Failed to create PayPal order ID');
-                                        }
-
-                                        return data.orderId;
-                                    } catch (err: any) {
-                                        console.error('[PayPal] createOrder Error:', err);
-                                        const msg = err.response?.data?.message || err.message || 'Payment Order Failed';
-                                        toast.error(msg);
-                                        throw err;
-                                    }
-                                },
-                                onApprove: async (data: any) => {
-                                    console.log('[PayPal] Order approved. Data:', data);
-                                    setIsLoading(true);
-                                    try {
-                                        const result = await paymentService.capturePayPalOrder({
-                                            orderId: data.orderID,
-                                            userId: user?.id || '',
-                                            planId: plan.id,
-                                            schoolId: user?.schoolId,
-                                            type: user?.role === UserRole.SCHOOL_ADMIN ? 'school' : 'teacher'
-                                        });
-                                        console.log('[PayPal] Capture result:', result);
-                                        toast.success('🎉 Subscription active!');
-                                        setTimeout(() => {
-                                            navigate(user?.role === UserRole.SCHOOL_ADMIN ? '/school/dashboard' : '/teacher/dashboard');
-                                        }, 2000);
-                                    } catch (error: any) {
-                                        toast.error(error.response?.data?.message || 'Verification failed');
-                                    } finally {
-                                        setIsLoading(false);
-                                    }
-                                },
-                                onError: (err: any) => {
-                                    console.error('PayPal Error:', err);
-                                    toast.error('PayPal checkout encountered an error. Please try again.');
-                                }
-                            }).render(containerId);
-                        }
-                    });
-                }
-            });
+    const handlePurchase = async (plan: Plan) => {
+        if (!user) {
+            navigate('/login');
+            return;
         }
-    }, [isLoading, plans, user, navigate]);
+
+        if (plan.price === 0) {
+            return handleFreePlan(plan);
+        }
+
+        setIsLoading(true);
+        try {
+            const isLoaded = await loadRazorpay();
+            if (!isLoaded) {
+                toast.error('Razorpay SDK failed to load. Are you online?');
+                setIsLoading(false);
+                return;
+            }
+
+            const data = await paymentService.createPayPalOrder({ amount: plan.price });
+
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_SfOyyf52Uj3eHK',
+                amount: Math.round(plan.price * 100),
+                currency: 'INR',
+                name: 'Paper Generation Platform',
+                description: `Subscription: ${plan.name}`,
+                order_id: data.orderId,
+                handler: async function (response: any) {
+                    try {
+                        setIsLoading(true);
+                        await paymentService.capturePayPalOrder({
+                            orderId: response.razorpay_order_id,
+                            paymentId: response.razorpay_payment_id,
+                            signature: response.razorpay_signature,
+                            userId: user?.id || '',
+                            planId: plan.id,
+                            schoolId: user?.schoolId,
+                            type: user?.role === UserRole.SCHOOL_ADMIN ? 'school' : 'teacher'
+                        });
+                        toast.success('🎉 Subscription active!');
+                        setTimeout(() => {
+                            navigate(getRedirectPath(user?.role, plan));
+                        }, 2000);
+                    } catch (error: any) {
+                        toast.error(error.response?.data?.message || 'Payment verification failed');
+                        setIsLoading(false);
+                    }
+                },
+                prefill: {
+                    name: user?.name,
+                    email: user?.email,
+                },
+                theme: {
+                    color: '#003087'
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                 toast.error('Payment failed: ' + response.error.description);
+                 setIsLoading(false);
+            });
+            rzp.open();
+        } catch (err: any) {
+            setIsLoading(false);
+            toast.error(err.response?.data?.message || 'Failed to initialize payment');
+        }
+    };
 
     const handleFreePlan = async (plan: Plan) => {
         if (!user) {
@@ -138,7 +145,7 @@ const Pricing: React.FC = () => {
             });
             toast.success('🎉 Free plan activated!');
             setTimeout(() => {
-                navigate(user?.role === UserRole.SCHOOL_ADMIN ? '/school/dashboard' : '/teacher/dashboard');
+                navigate(getRedirectPath(user?.role, plan));
             }, 2000);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to activate free plan');
@@ -146,8 +153,6 @@ const Pricing: React.FC = () => {
             setIsLoading(false);
         }
     };
-
-    // Removed Razorpay handlePurchase
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -159,7 +164,7 @@ const Pricing: React.FC = () => {
         if (status === 'success' && token && queryPlanName && user) {
             handleVerifyRedirect(token, queryPlanName, queryType);
         } else if (status === 'cancelled') {
-            toast.info('PayPal payment was cancelled.');
+            toast.info('Payment was cancelled.');
             window.history.replaceState({}, '', '/pricing');
         }
     }, [user]);
@@ -178,9 +183,9 @@ const Pricing: React.FC = () => {
             // Clean up url
             window.history.replaceState({}, '', '/pricing');
 
-            // Assuming checkSubscriptionStatus is available or handled via navigation
+            const purchasedPlan = plans.find(p => p.name === planName);
             setTimeout(() => {
-                navigate(user?.role === UserRole.SCHOOL_ADMIN ? '/school/dashboard' : '/teacher/dashboard');
+                navigate(getRedirectPath(user?.role, purchasedPlan));
             }, 2000);
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Verification failed');
@@ -189,8 +194,6 @@ const Pricing: React.FC = () => {
             setIsLoading(false);
         }
     };
-
-    // Legacy handlePurchase removed
 
     const handleBackToLogin = () => {
         logout();
@@ -281,7 +284,12 @@ const Pricing: React.FC = () => {
                                             Get Started for Free
                                         </button>
                                     ) : (
-                                        <div id={`paypal-button-container-${plan.id}`} className="mt-4 min-h-[45px]"></div>
+                                        <button 
+                                            onClick={() => handlePurchase(plan)}
+                                            className={`w-full py-3.5 text-white rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 ${isPopular ? 'bg-brand-blue hover:bg-blue-800' : 'bg-gray-900 hover:bg-gray-800'}`}
+                                        >
+                                            Subscribe Now
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -295,11 +303,8 @@ const Pricing: React.FC = () => {
                             <Shield className="w-8 h-8 text-[#003087]" />
                         </div>
                         <div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-1">Use PayPal Sandbox Keys</h4>
-                            <p className="text-gray-500 text-sm mb-2">Test integration is active. Sandbox Client ID is listed below:</p>
-                            <code className="text-gray-800 text-xs font-mono bg-gray-50 p-2.5 rounded-lg border border-gray-200 block break-all font-bold">
-                                {import.meta.env.VITE_PAYPAL_CLIENT_ID || 'AXVl0H4bkSjzlT_JTPDCwdg1yn8TrkdxpnOwnxIg8Jg_bW1A5SQMclvknZjoifiH_YFSTpG6Qj6tU9MH'}
-                            </code>
+                            <h4 className="text-xl font-bold text-gray-900 mb-1">Use Razorpay Test Keys</h4>
+                            <p className="text-gray-500 text-sm mb-2">Test integration is active. Sandbox Key ID is configured.</p>
                         </div>
                     </div>
                     <div className="flex gap-4">
@@ -315,7 +320,5 @@ const Pricing: React.FC = () => {
         </div>
     );
 };
-
-
 
 export default Pricing;
