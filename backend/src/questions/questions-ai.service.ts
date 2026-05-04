@@ -38,7 +38,7 @@ export class QuestionsAIService {
               return { model: genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }), key };
            }
         }
-      } catch (err) {z
+      } catch (err) {
         continue;
       }
     }
