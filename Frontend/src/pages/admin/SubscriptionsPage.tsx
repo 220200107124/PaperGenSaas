@@ -473,4 +473,3 @@ const SubscriptionsPage: React.FC = () => {
 };
 
 export default SubscriptionsPage;
-

@@ -390,7 +390,7 @@ const GlobalQuestionsPage: React.FC = () => {
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-tight">Global Question Bank</h1>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-tight">Global Question Bank</h1>
                     <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
                         Gujarat Board <ChevronRight className="w-3 h-3" /> <span className="text-brand-blue">Standard Syllabus</span>
                     </p>
@@ -425,7 +425,7 @@ const GlobalQuestionsPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/20 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/20 items-end">
                 <div className="lg:col-span-3 space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-1">Standard</label>
                     <select
@@ -560,7 +560,7 @@ const GlobalQuestionsPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[400px]">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:p-6 md:p-8 min-h-[400px]">
                         <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
                             {newQuestions.map((q, idx) => (
                                 <div
@@ -700,7 +700,7 @@ const GlobalQuestionsPage: React.FC = () => {
                     </>
                 }
             >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:p-6 md:p-8">
                     <div className="md:col-span-2 space-y-6">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Rich Text Question Content</label>
@@ -780,7 +780,7 @@ const GlobalQuestionsPage: React.FC = () => {
                         )}
                     </div>
 
-                    <div className="space-y-6 bg-gray-100/30 p-8 rounded-[2.5rem] border border-gray-100 h-fit">
+                    <div className="space-y-6 bg-gray-100/30 p-4 sm:p-6 md:p-8 rounded-[2.5rem] border border-gray-100 h-fit">
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center gap-2">
                                 <GraduationCap className="w-3.5 h-3.5 text-brand-blue" /> Standard
@@ -830,4 +830,3 @@ const GlobalQuestionsPage: React.FC = () => {
 };
 
 export default GlobalQuestionsPage;
-

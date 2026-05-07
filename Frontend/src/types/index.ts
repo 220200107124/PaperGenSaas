@@ -17,7 +17,6 @@ export interface User {
   createdAt: string;
   isActive: boolean;
   hasActiveSubscription?: boolean;
-  subjectId?: string;
 }
 
 export interface AuthState {
@@ -140,19 +139,14 @@ export interface SubscriptionPlan {
 
 export interface Subscription {
   id: string;
-  schoolId?: string;
-  userId?: string;
-  type: 'school' | 'teacher';
+  schoolId: string;
   planName: string;
-  price: number;
-  currency: string;
   startDate: string;
   endDate: string;
   status: boolean;
   modulePermissions?: any;
   createdAt: string;
   school?: School;
-  user?: User;
 }
 
 export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -167,4 +161,3 @@ export interface SchoolRequest {
   status: RequestStatus;
   createdAt: string;
 }
-

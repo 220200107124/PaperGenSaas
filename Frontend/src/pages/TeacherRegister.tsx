@@ -85,4 +85,3 @@ const TeacherRegister: React.FC = () => {
 };
 
 export default TeacherRegister;
-

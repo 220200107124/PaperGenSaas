@@ -5,7 +5,10 @@ import { UserRole } from './types';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Login from './pages/Login';
-import Home from './pages/Home';
+import Home from "./pages/Home1";
+import Pricing from './pages/Pricing';
+import AboutPage from './pages/About';
+// import Home from './pages/Home';
 import SchoolRegister from './pages/SchoolRegister';
 import TeacherRegister from './pages/TeacherRegister';
 import VerifyEmail from './pages/VerifyEmail';
@@ -21,7 +24,6 @@ import TeacherRequestsPage from './pages/admin/TeacherRequestsPage';
 import StandardsManagementPage from './pages/admin/StandardsManagementPage';
 import SubjectsManagementPage from './pages/admin/SubjectsManagementPage';
 import ChaptersManagementPage from './pages/admin/ChaptersManagementPage';
-import PlansPage from './pages/admin/PlansPage';
 import SchoolDashboard from './pages/school/SchoolDashboard';
 import TeachersPage from './pages/school/TeachersPage';
 import SchoolQuestionsPage from './pages/school/SchoolQuestionsPage';
@@ -31,7 +33,6 @@ import TeacherQuestionsPage from './pages/teacher/TeacherQuestionsPage';
 import MyPapersPage from './pages/teacher/MyPapersPage';
 import CreatePaper from './pages/teacher/CreatePaper';
 import PaperDetailsPage from './pages/teacher/PaperDetailsPage';
-import Pricing from './pages/Pricing';
 
 const App: React.FC = () => {
   return (
@@ -39,6 +40,12 @@ const App: React.FC = () => {
       <Routes>
         {/* Public Pages */}
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<Home />} />
+        <Route path="/careers" element={<Home />} />
+        <Route path="/security" element={<Home />} />
+        <Route path="/privacy-policy" element={<Home />} />
+        <Route path="/terms" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/school-register" element={<SchoolRegister />} />
         <Route path="/teacher-register" element={<TeacherRegister />} />
@@ -60,7 +67,6 @@ const App: React.FC = () => {
             <Route path="questions" element={<GlobalQuestionsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
-            <Route path="plans" element={<PlansPage />} />
           </Route>
 
           {/* School Admin Routes */}
@@ -86,7 +92,7 @@ const App: React.FC = () => {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <ToastContainer position="top-right" autoClose={3000} style={{ zIndex: 999999 }} />
+      <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>
   );
 };
