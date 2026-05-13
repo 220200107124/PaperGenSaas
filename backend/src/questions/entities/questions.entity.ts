@@ -25,21 +25,21 @@ export class Question {
   @Column({ nullable: true })
   schoolId?: string;
 
-  @Column()
+  @Column({ nullable: true })
   standardId: string;
 
   @ManyToOne(() => Standard, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'standardId' })
   standard: Standard;
 
-  @Column()
+  @Column({ nullable: true })
   subjectId: string;
 
   @ManyToOne(() => Subject, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'subjectId' })
   subject: Subject;
 
-  @Column()
+  @Column({ nullable: true })
   chapterId: string;
 
   @ManyToOne(() => Chapter, { onDelete: 'CASCADE' })

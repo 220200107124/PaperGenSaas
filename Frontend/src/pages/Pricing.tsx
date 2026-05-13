@@ -28,7 +28,7 @@ const getRedirectPath = (role: UserRole | undefined, plan?: Plan) => {
 
 const Pricing: React.FC = () => {
     const navigate = useNavigate();
-    const { user, logout } = useAuthStore();
+    const { user, logout, updateUser } = useAuthStore();
     const [plans, setPlans] = useState<Plan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -100,6 +100,7 @@ const Pricing: React.FC = () => {
                             type: user?.role === UserRole.SCHOOL_ADMIN ? 'school' : 'teacher'
                         });
                         toast.success('🎉 Subscription active!');
+                        updateUser({ hasActiveSubscription: true });
                         setTimeout(() => {
                             navigate(getRedirectPath(user?.role, plan));
                         }, 2000);
@@ -144,6 +145,7 @@ const Pricing: React.FC = () => {
                 type: user.role === UserRole.SCHOOL_ADMIN ? 'school' : 'teacher'
             });
             toast.success('🎉 Free plan activated!');
+            updateUser({ hasActiveSubscription: true });
             setTimeout(() => {
                 navigate(getRedirectPath(user?.role, plan));
             }, 2000);
@@ -180,6 +182,7 @@ const Pricing: React.FC = () => {
                 type: type
             });
             toast.success('🎉 Subscription active!');
+            updateUser({ hasActiveSubscription: true });
             // Clean up url
             window.history.replaceState({}, '', '/pricing');
 

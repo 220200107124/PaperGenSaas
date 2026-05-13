@@ -45,7 +45,7 @@ const GlobalQuestionsPage: React.FC = () => {
     const [modalStandard, setModalStandard] = useState('');
     const [modalSubject, setModalSubject] = useState('');
     const [modalChapter, setModalChapter] = useState('');
- 
+
     // AI Extraction States
     const [isExtracting, setIsExtracting] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -130,7 +130,7 @@ const GlobalQuestionsPage: React.FC = () => {
             questionType: q.questionType,
             questionText: q.questionText,
             options: q.options ? [q.options.a, q.options.b, q.options.c, q.options.d] : ['', '', '', ''],
-            answer: q.answer?.correctOption ? ['a','b','c','d'].indexOf(q.answer.correctOption).toString() : q.answer?.text || '',
+            answer: q.answer?.correctOption ? ['a', 'b', 'c', 'd'].indexOf(q.answer.correctOption).toString() : q.answer?.text || '',
             difficulty: q.difficulty as Difficulty,
             marks: q.marks
         });
@@ -144,7 +144,7 @@ const GlobalQuestionsPage: React.FC = () => {
             let qAnswer = {};
             if (modalData.questionType === QuestionType.MCQ) {
                 qOptions = { a: modalData.options[0], b: modalData.options[1], c: modalData.options[2], d: modalData.options[3] };
-                qAnswer = { correctOption: ['a','b','c','d'][parseInt(modalData.answer) || 0] };
+                qAnswer = { correctOption: ['a', 'b', 'c', 'd'][parseInt(modalData.answer) || 0] };
             } else {
                 qAnswer = { text: modalData.answer };
             }
@@ -254,30 +254,56 @@ const GlobalQuestionsPage: React.FC = () => {
     const handleAIUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
- 
+
         setIsExtracting(true);
         const formData = new FormData();
         formData.append('file', file);
- 
+
         try {
             const token = localStorage.getItem('token');
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/questions/extract-pdf`, formData, {
-                headers: { 
+                headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}` 
+                    'Authorization': `Bearer ${token}`
                 }
             });
- 
-            const extracted = response.data.data.map((q: any) => ({
-                questionText: q.questionText || '',
-                questionType: q.questionType || QuestionType.SHORT,
-                difficulty: q.difficulty || Difficulty.MEDIUM,
-                marks: q.marks || 1,
-                options: q.options ? [q.options.a || '', q.options.b || '', q.options.c || '', q.options.d || ''] : ['', '', '', ''],
-                answer: (q.questionType === QuestionType.MCQ || !q.questionType) ? (['a', 'b', 'c', 'd'].indexOf(q.answer)?.toString() || '0') : (q.answer || ''),
-                status: 'pending'
-            }));
- 
+
+            const extracted = response.data.data.map((q: any) => {
+                const isArrayOptions = Array.isArray(q.options);
+                const optA = isArrayOptions ? q.options[0] : (q.options?.a || q.options?.A || '');
+                const optB = isArrayOptions ? q.options[1] : (q.options?.b || q.options?.B || '');
+                const optC = isArrayOptions ? q.options[2] : (q.options?.c || q.options?.C || '');
+                const optD = isArrayOptions ? q.options[3] : (q.options?.d || q.options?.D || '');
+                const mappedOptions = [optA || '', optB || '', optC || '', optD || ''];
+
+                let answerIdx = '0';
+                if (q.questionType === QuestionType.MCQ || !q.questionType) {
+                    if (typeof q.answer === 'string') {
+                        const lowerAns = q.answer.toLowerCase().trim();
+                        if (lowerAns === 'a' || lowerAns === '1' || lowerAns === 'option a') answerIdx = '0';
+                        else if (lowerAns === 'b' || lowerAns === '2' || lowerAns === 'option b') answerIdx = '1';
+                        else if (lowerAns === 'c' || lowerAns === '3' || lowerAns === 'option c') answerIdx = '2';
+                        else if (lowerAns === 'd' || lowerAns === '4' || lowerAns === 'option d') answerIdx = '3';
+                        else {
+                            const idx = mappedOptions.findIndex(opt => opt && opt.toLowerCase().trim() === lowerAns);
+                            if (idx !== -1) answerIdx = idx.toString();
+                        }
+                    } else if (typeof q.answer === 'number') {
+                        answerIdx = q.answer.toString();
+                    }
+                }
+
+                return {
+                    questionText: q.questionText || q.QuestionText || '',
+                    questionType: q.questionType || q.QuestionType || QuestionType.SHORT,
+                    difficulty: q.difficulty || q.Difficulty || Difficulty.MEDIUM,
+                    marks: q.marks || q.Marks || 1,
+                    options: mappedOptions,
+                    answer: (q.questionType === QuestionType.MCQ || !q.questionType) ? answerIdx : (q.answer || ''),
+                    status: 'pending'
+                };
+            });
+
             setNewQuestions(extracted);
             setIsBulkModalOpen(true);
             toast.success('Questions extracted! Please review and publish.');
@@ -288,7 +314,7 @@ const GlobalQuestionsPage: React.FC = () => {
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
- 
+
     const handlePublish = async () => {
         if (!modalStandard || !modalSubject || !modalChapter) {
             toast.warning('Please select Standard, Subject and Chapter');
@@ -369,13 +395,13 @@ const GlobalQuestionsPage: React.FC = () => {
             header: 'Actions',
             accessor: (q: Question) => (
                 <div className="flex items-center gap-2">
-                    <button 
+                    <button
                         onClick={() => handleEdit(q)}
                         className="p-2.5 rounded-xl border border-gray-100 text-gray-400 hover:text-brand-blue hover:bg-brand-blue/5 transition-all shadow-sm"
                     >
                         <Edit3 className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                         onClick={() => handleDelete(q.id)}
                         className="p-2.5 rounded-xl border border-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm"
                     >
@@ -397,12 +423,12 @@ const GlobalQuestionsPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleAIUpload} 
-                        accept=".pdf" 
-                        className="hidden" 
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAIUpload}
+                        accept=".pdf"
+                        className="hidden"
                     />
                     <button
                         onClick={() => fileInputRef.current?.click()}
@@ -745,21 +771,21 @@ const GlobalQuestionsPage: React.FC = () => {
                                     {['a', 'b', 'c', 'd'].map((char, i) => (
                                         <div key={char} className="space-y-1">
                                             <div className="flex items-center gap-2 pl-2">
-                                                <input 
-                                                    type="radio" 
-                                                    name="correctAnswer" 
-                                                    checked={modalData.answer === i.toString()} 
-                                                    onChange={() => setModalData(prev => ({...prev, answer: i.toString()}))}
+                                                <input
+                                                    type="radio"
+                                                    name="correctAnswer"
+                                                    checked={modalData.answer === i.toString()}
+                                                    onChange={() => setModalData(prev => ({ ...prev, answer: i.toString() }))}
                                                 />
                                                 <span className="text-[10px] font-bold uppercase text-gray-400">Option {char.toUpperCase()}</span>
                                             </div>
-                                            <input 
-                                                type="text" 
-                                                value={modalData.options[i]} 
+                                            <input
+                                                type="text"
+                                                value={modalData.options[i]}
                                                 onChange={(e) => {
                                                     const newOpts = [...modalData.options];
                                                     newOpts[i] = e.target.value;
-                                                    setModalData(prev => ({...prev, options: newOpts}));
+                                                    setModalData(prev => ({ ...prev, options: newOpts }));
                                                 }}
                                                 className="w-full px-4 py-3 bg-gray-50 rounded-xl text-xs font-bold font-gujarati"
                                             />
@@ -770,9 +796,9 @@ const GlobalQuestionsPage: React.FC = () => {
                         ) : (
                             <div className="space-y-2 pt-4 border-t border-gray-100">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Reference Answer</label>
-                                <textarea 
+                                <textarea
                                     value={modalData.answer}
-                                    onChange={(e) => setModalData(prev => ({...prev, answer: e.target.value}))}
+                                    onChange={(e) => setModalData(prev => ({ ...prev, answer: e.target.value }))}
                                     className="w-full h-24 px-5 py-4 bg-gray-50 border-0 rounded-2xl font-bold text-sm focus:ring-4 focus:ring-brand-blue/5 resize-none font-gujarati"
                                     placeholder="Enter the correct answer or solution details..."
                                 />
