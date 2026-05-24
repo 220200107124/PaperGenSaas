@@ -12,6 +12,12 @@ export class Plan {
   price: number;
 
   @Column({ nullable: true })
+  title: string;
+
+  @Column({ default: 'both' }) // 'school', 'teacher', or 'both'
+  type: string;
+
+  @Column({ nullable: true })
   description: string;
 
   @Column({ default: 0 })

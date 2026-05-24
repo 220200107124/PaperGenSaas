@@ -9,7 +9,7 @@ export class Chapter {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   subjectId: string;
 
   @ManyToOne(() => Subject, { onDelete: 'CASCADE' })

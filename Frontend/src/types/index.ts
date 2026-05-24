@@ -161,4 +161,3 @@ export interface SchoolRequest {
   status: RequestStatus;
   createdAt: string;
 }
-

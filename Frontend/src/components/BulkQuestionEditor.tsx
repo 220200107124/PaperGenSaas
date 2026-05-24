@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle2, Loader2, Save, Trash2, Plus } from 'lucide-react';
-
 import { questionService } from '../api/questionService';
 import { toast } from 'react-toastify';
 import { Difficulty, QuestionType } from '../types';
@@ -10,12 +9,24 @@ interface BulkQuestionEditorProps {
     standardId: string;
     subjectId: string;
 }
+interface Question {
+    questionText: string;
+    questionType: QuestionType;
+    difficulty: Difficulty;
+    marks: number;
+    options?: string[];
+    answer?: string;
+    standardId: string;
+    subjectId: string;
+}
+
+const defaultMCQOptions = ['', '', '', ''];
 
 const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, standardId, subjectId }) => {
     const [file, setFile] = useState<File | null>(null);
     const [isExtracting, setIsExtracting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [extractedQuestions, setExtractedQuestions] = useState<any[]>([]);
+    const [questions, setQuestions] = useState<Question[]>([]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
@@ -31,10 +42,22 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
             formData.append('file', file);
             formData.append('standardId', standardId);
             formData.append('subjectId', subjectId);
-            
-            const questions = await questionService.extractFromPdf(formData);
-            setExtractedQuestions(questions);
-            toast.success(`Extracted ${questions.length} questions successfully!`);
+
+            const raw = await questionService.extractFromPdf(formData);
+
+            const sanitized: Question[] = raw.map((q: any) => ({
+                questionText: q.questionText || '',
+                questionType: q.questionType || q.type || QuestionType.SHORT,
+                difficulty: q.difficulty || Difficulty.MEDIUM,
+                marks: q.marks || 1,
+                options: q.options || (q.questionType === QuestionType.MCQ ? defaultMCQOptions : undefined),
+                answer: q.answer || '',
+                standardId,
+                subjectId
+            }));
+
+            setQuestions(sanitized);
+            toast.success(`Extracted ${sanitized.length} questions`);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to extract questions');
         } finally {
@@ -42,25 +65,27 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
         }
     };
 
-    const handleUpdateQuestion = (index: number, updates: any) => {
-        const updated = [...extractedQuestions];
-        updated[index] = { ...updated[index], ...updates };
-        setExtractedQuestions(updated);
+    const updateQuestion = (index: number, updates: Partial<Question>) => {
+        setQuestions(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], ...updates };
+            return updated;
+        });
     };
 
-    const handleRemoveQuestion = (index: number) => {
-        setExtractedQuestions(prev => prev.filter((_, i) => i !== index));
+    const removeQuestion = (index: number) => {
+        setQuestions(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleAddBlank = () => {
-        setExtractedQuestions(prev => [
+    const addBlankQuestion = () => {
+        setQuestions(prev => [
             ...prev,
             {
                 questionText: '',
-                type: QuestionType.MCQ,
+                questionType: QuestionType.MCQ,
                 difficulty: Difficulty.MEDIUM,
                 marks: 1,
-                options: ['', '', '', ''],
+                options: [...defaultMCQOptions],
                 answer: '',
                 standardId,
                 subjectId
@@ -69,20 +94,15 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
     };
 
     const handleSaveAll = async () => {
-        if (extractedQuestions.length === 0) return;
+        if (!questions.length) return;
+
         setIsSaving(true);
         try {
-            // Ensure standardId and subjectId are set for all
-            const toSave = extractedQuestions.map(q => ({
-                ...q,
-                standardId,
-                subjectId
-            }));
-            await questionService.bulkCreate(toSave);
-            toast.success('All questions saved to bank!');
+            await questionService.bulkCreate(questions);
+            toast.success('Questions saved successfully');
             onComplete();
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to save questions');
+            toast.error(err.response?.data?.message || 'Save failed');
         } finally {
             setIsSaving(false);
         }
@@ -90,7 +110,7 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
 
     return (
         <div className="space-y-8">
-            {extractedQuestions.length === 0 ? (
+            {questions.length === 0 ? (
                 <div className="bg-white p-10 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center space-y-6">
                     <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center">
                         <Upload className="w-10 h-10 text-brand-blue" />
@@ -137,10 +157,10 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                         <div className="flex items-center gap-4">
                             <div className="px-5 py-2 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
                                 <span className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-none">Draft Questions</span>
-                                <span className="text-xl font-black text-brand-blue leading-none">{extractedQuestions.length}</span>
+                                <span className="text-xl font-black text-brand-blue leading-none">{questions.length}</span>
                             </div>
                             <button 
-                                onClick={handleAddBlank}
+                                onClick={addBlankQuestion}
                                 className="p-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition-all"
                                 title="Add Manual Question"
                             >
@@ -149,7 +169,7 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                         </div>
                         <div className="flex gap-4">
                             <button 
-                                onClick={() => setExtractedQuestions([])}
+                                onClick={() => setQuestions([])}
                                 className="px-6 py-3 text-gray-500 font-bold hover:text-gray-700 transition-all"
                             >
                                 Cancel
@@ -166,10 +186,10 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                     </div>
 
                     <div className="space-y-6">
-                        {extractedQuestions.map((q, index) => (
+                        {questions.map((q, index) => (
                             <div key={index} className="bg-white rounded-3xl border border-gray-100 shadow-md p-8 group transition-all hover:border-brand-blue/30 hover:shadow-xl space-y-6 relative">
                                 <button 
-                                    onClick={() => handleRemoveQuestion(index)}
+                                    onClick={() => removeQuestion(index)}
                                     className="absolute top-6 right-6 p-2 text-gray-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
                                 >
                                     <Trash2 className="w-5 h-5" />
@@ -178,7 +198,7 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                                 <div className="space-y-4">
                                     <textarea 
                                         value={q.questionText}
-                                        onChange={(e) => handleUpdateQuestion(index, { questionText: e.target.value })}
+                                        onChange={(e) => updateQuestion(index, { questionText: e.target.value })}
                                         className="w-full bg-gray-50 border-0 rounded-2xl p-6 text-lg font-bold font-gujarati focus:ring-4 focus:ring-brand-blue/5 min-h-[120px] transition-all"
                                         placeholder="Enter question text in Gujarati..."
                                     />
@@ -187,8 +207,15 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Type</label>
                                             <select 
-                                                value={q.type}
-                                                onChange={(e) => handleUpdateQuestion(index, { type: e.target.value })}
+                                                value={q.questionType}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const updates: any = { questionType: val };
+                                                    if (val === QuestionType.MCQ && (!q.options || !Array.isArray(q.options))) {
+                                                        updates.options = ['', '', '', ''];
+                                                    }
+                                                    updateQuestion(index, updates);
+                                                }}
                                                 className="w-full bg-gray-50 border-0 rounded-xl px-4 py-2 text-xs font-bold"
                                             >
                                                 {Object.values(QuestionType).map(t => <option key={t} value={t}>{t}</option>)}
@@ -198,7 +225,9 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Difficulty</label>
                                             <select 
                                                 value={q.difficulty}
-                                                onChange={(e) => handleUpdateQuestion(index, { difficulty: e.target.value })}
+                                                onChange={(e) =>
+                                                    updateQuestion(index, { difficulty: e.target.value as Difficulty })
+                                                }
                                                 className="w-full bg-gray-50 border-0 rounded-xl px-4 py-2 text-xs font-bold"
                                             >
                                                 {Object.values(Difficulty).map(d => <option key={d} value={d}>{d}</option>)}
@@ -209,13 +238,13 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                                             <input 
                                                 type="number"
                                                 value={q.marks}
-                                                onChange={(e) => handleUpdateQuestion(index, { marks: Number(e.target.value) })}
+                                                onChange={(e) => updateQuestion(index, { marks: Number(e.target.value) })}
                                                 className="w-full bg-gray-50 border-0 rounded-xl px-4 py-2 text-xs font-bold"
                                             />
                                         </div>
                                     </div>
 
-                                    {q.type === QuestionType.MCQ && q.options && (
+                                    {q.questionType === QuestionType.MCQ && q.options && (
                                         <div className="pt-6 space-y-3">
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Options & Answer</label>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -225,15 +254,15 @@ const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({ onComplete, sta
                                                         <input 
                                                             value={opt}
                                                             onChange={(e) => {
-                                                                const newOpts = [...q.options];
+                                                                const newOpts = [...(q.options || [])];
                                                                 newOpts[i] = e.target.value;
-                                                                handleUpdateQuestion(index, { options: newOpts });
+                                                                updateQuestion(index, { options: newOpts });
                                                             }}
                                                             className={`w-full bg-gray-50 border-2 pl-10 pr-12 py-3 rounded-xl text-sm font-gujarati transition-all ${q.answer === opt ? 'border-green-500 bg-green-50/30' : 'border-transparent focus:border-brand-blue'}`}
                                                             placeholder={`Option ${String.fromCharCode(65 + i)}`}
                                                         />
                                                         <button 
-                                                            onClick={() => handleUpdateQuestion(index, { answer: opt })}
+                                                            onClick={() => updateQuestion(index, { answer: opt })}
                                                             className={`absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${q.answer === opt ? 'bg-green-500 text-white ring-4 ring-green-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
                                                         >
                                                             <CheckCircle2 className="w-3.5 h-3.5" />

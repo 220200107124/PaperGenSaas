@@ -7,10 +7,28 @@ import { paymentService } from '../api/paymentService';
 import { plansService, type Plan } from '../api/plansService';
 import { toast } from 'react-toastify';
 
+const getRedirectPath = (role: UserRole | undefined, plan?: Plan) => {
+    if (!role) return '/login';
+    const base = role === UserRole.SCHOOL_ADMIN ? '/school' : '/teacher';
+    
+    if (!plan || !plan.modulePermissions) return `${base}/dashboard`;
+    
+    // Priority routing based on modules purchased
+    if (plan.modulePermissions.aiModule || plan.modulePermissions.paperModule) {
+        return `${base}/create-paper`;
+    }
+    if (plan.modulePermissions.questionModule) {
+        return `${base}/questions`;
+    }
+    if (role === UserRole.SCHOOL_ADMIN && plan.modulePermissions.teacherModule) {
+        return `${base}/teachers`;
+    }
+    return `${base}/dashboard`;
+};
+
 const Pricing: React.FC = () => {
     const navigate = useNavigate();
-    const { user, logout } = useAuthStore();
-    const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+    const { user, logout, updateUser } = useAuthStore();
     const [plans, setPlans] = useState<Plan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -18,7 +36,7 @@ const Pricing: React.FC = () => {
         const fetchPlans = async () => {
             try {
                 const data = await plansService.getPlans();
-                setPlans(data);
+                setPlans(data); // Display all plans to prevent DB mismatches from hiding UI
             } catch (err) {
                 toast.error('Failed to load subscription plans');
             } finally {
@@ -30,6 +48,9 @@ const Pricing: React.FC = () => {
 
     const loadRazorpay = () => {
         return new Promise((resolve) => {
+            if ((window as any).Razorpay) {
+                return resolve(true);
+            }
             const script = document.createElement('script');
             script.src = 'https://checkout.razorpay.com/v1/checkout.js';
             script.onload = () => resolve(true);
@@ -45,60 +66,135 @@ const Pricing: React.FC = () => {
         }
 
         if (plan.price === 0) {
-            toast.info('Free plan is active by default for new accounts.');
-            return;
+            return handleFreePlan(plan);
         }
 
-        setLoadingPlan(plan.id);
-        
+        setIsLoading(true);
         try {
-            const res = await loadRazorpay();
-            if (!res) {
+            const isLoaded = await loadRazorpay();
+            if (!isLoaded) {
                 toast.error('Razorpay SDK failed to load. Are you online?');
+                setIsLoading(false);
                 return;
             }
 
-            // Correct amount to paise for Razorpay
-            const order = await paymentService.createOrder(Number(plan.price));
-            
+            const data = await paymentService.createPayPalOrder({ amount: plan.price });
+
             const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_your_key',
-                amount: order.amount,
-                currency: order.currency,
-                name: 'PaperGen SaaS',
-                description: `${plan.name} Subscription`,
-                order_id: order.id,
-                handler: async (response: any) => {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_SfOyyf52Uj3eHK',
+                amount: Math.round(plan.price * 100),
+                currency: 'INR',
+                name: 'Paper Generation Platform',
+                description: `Subscription: ${plan.name}`,
+                order_id: data.orderId,
+                handler: async function (response: any) {
                     try {
-                        await paymentService.verifyPayment({
-                            ...response,
-                            userId: user.id,
-                            schoolId: user.schoolId,
-                            planName: plan.name
+                        setIsLoading(true);
+                        await paymentService.capturePayPalOrder({
+                            orderId: response.razorpay_order_id,
+                            paymentId: response.razorpay_payment_id,
+                            signature: response.razorpay_signature,
+                            userId: user?.id || '',
+                            planId: plan.id,
+                            schoolId: user?.schoolId,
+                            type: user?.role === UserRole.SCHOOL_ADMIN ? 'school' : 'teacher'
                         });
-                        toast.success('Subscription activated successfully!');
-                        window.location.href = user.role === UserRole.SCHOOL_ADMIN ? '/school/dashboard' : '/teacher/dashboard';
-                    } catch (err: any) {
-                        toast.error(err.response?.data?.message || 'Verification failed');
+                        toast.success('🎉 Subscription active!');
+                        updateUser({ hasActiveSubscription: true });
+                        setTimeout(() => {
+                            navigate(getRedirectPath(user?.role, plan));
+                        }, 2000);
+                    } catch (error: any) {
+                        toast.error(error.response?.data?.message || 'Payment verification failed');
+                        setIsLoading(false);
                     }
                 },
                 prefill: {
-                    name: user.name,
-                    email: user.email,
+                    name: user?.name,
+                    email: user?.email,
                 },
                 theme: {
-                    color: '#2563EB',
-                },
+                    color: '#003087'
+                }
             };
 
-            const paymentObject = new (window as any).Razorpay(options);
-            paymentObject.open();
-
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                 toast.error('Payment failed: ' + response.error.description);
+                 setIsLoading(false);
+            });
+            rzp.open();
         } catch (err: any) {
-            console.error('Payment Error:', err);
-            toast.error('Could not initiate payment. Please try again.');
+            setIsLoading(false);
+            toast.error(err.response?.data?.message || 'Failed to initialize payment');
+        }
+    };
+
+    const handleFreePlan = async (plan: Plan) => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        setIsLoading(true);
+        try {
+            await paymentService.capturePayPalOrder({
+                orderId: 'FREE_PLAN_' + Date.now(),
+                userId: user.id,
+                planId: plan.id,
+                schoolId: user.schoolId,
+                type: user.role === UserRole.SCHOOL_ADMIN ? 'school' : 'teacher'
+            });
+            toast.success('🎉 Free plan activated!');
+            updateUser({ hasActiveSubscription: true });
+            setTimeout(() => {
+                navigate(getRedirectPath(user?.role, plan));
+            }, 2000);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to activate free plan');
         } finally {
-            setLoadingPlan(null);
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get('status');
+        const token = params.get('token');
+        const queryPlanName = params.get('planName');
+        const queryType = params.get('type') as 'school' | 'teacher';
+
+        if (status === 'success' && token && queryPlanName && user) {
+            handleVerifyRedirect(token, queryPlanName, queryType);
+        } else if (status === 'cancelled') {
+            toast.info('Payment was cancelled.');
+            window.history.replaceState({}, '', '/pricing');
+        }
+    }, [user]);
+
+    const handleVerifyRedirect = async (token: string, planName: string, type: 'school' | 'teacher') => {
+        setIsLoading(true);
+        try {
+            await paymentService.verifyPayPalPayment({
+                paypalOrderId: token,
+                userId: user?.id,
+                schoolId: user?.schoolId,
+                planName: planName,
+                type: type
+            });
+            toast.success('🎉 Subscription active!');
+            updateUser({ hasActiveSubscription: true });
+            // Clean up url
+            window.history.replaceState({}, '', '/pricing');
+
+            const purchasedPlan = plans.find(p => p.name === planName);
+            setTimeout(() => {
+                navigate(getRedirectPath(user?.role, purchasedPlan));
+            }, 2000);
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Verification failed');
+            window.history.replaceState({}, '', '/pricing');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -136,9 +232,9 @@ const Pricing: React.FC = () => {
                     {plans.map((plan) => {
                         const Icon = getPlanIcon(plan.name);
                         const isPopular = plan.name.toUpperCase() === 'BASIC';
-                        
+
                         return (
-                            <div 
+                            <div
                                 key={plan.id}
                                 className={`relative bg-white rounded-3xl p-8 shadow-xl border-2 transition-all hover:scale-[1.02] ${isPopular ? 'border-brand-blue ring-4 ring-brand-blue/5' : 'border-transparent'}`}
                             >
@@ -170,10 +266,10 @@ const Pricing: React.FC = () => {
                                         <Check className="w-4 h-4 text-green-600" />
                                         <span className="text-sm font-medium">{plan.teacherLimit === -1 ? 'Unlimited' : plan.teacherLimit} Teacher Accounts</span>
                                     </li>
-                                    {plan.modulePermissions.aiModule && (
+                                    {plan.modulePermissions?.aiModule && (
                                         <li className="flex items-center gap-3 text-gray-700">
                                             <Check className="w-4 h-4 text-green-600" />
-                                            <span className="text-sm font-medium">AI Question Extraction</span>
+                                            <span className="text-sm font-medium">AI Question Generator</span>
                                         </li>
                                     )}
                                     <li className="flex items-center gap-3 text-gray-700">
@@ -182,13 +278,23 @@ const Pricing: React.FC = () => {
                                     </li>
                                 </ul>
 
-                                <button 
-                                    onClick={() => handlePurchase(plan)}
-                                    disabled={loadingPlan === plan.id}
-                                    className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPopular ? 'bg-brand-blue text-white hover:bg-blue-800 shadow-lg shadow-brand-blue/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
-                                >
-                                    {loadingPlan === plan.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Activate Now'}
-                                </button>
+                                <div className="space-y-3">
+                                    {plan.price === 0 ? (
+                                        <button 
+                                            onClick={() => handleFreePlan(plan)}
+                                            className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg active:scale-95"
+                                        >
+                                            Get Started for Free
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => handlePurchase(plan)}
+                                            className={`w-full py-3.5 text-white rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 ${isPopular ? 'bg-brand-blue hover:bg-blue-800' : 'bg-gray-900 hover:bg-gray-800'}`}
+                                        >
+                                            Subscribe Now
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         );
                     })}
@@ -196,16 +302,16 @@ const Pricing: React.FC = () => {
 
                 <div className="bg-white rounded-3xl p-10 shadow-lg border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
-                            <Shield className="w-8 h-8 text-brand-blue" />
+                        <div className="w-16 h-16 bg-[#003087]/10 rounded-2xl flex items-center justify-center shrink-0">
+                            <Shield className="w-8 h-8 text-[#003087]" />
                         </div>
                         <div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-1">Secure Payments via Razorpay</h4>
-                            <p className="text-gray-500">Industry-standard encryption for your safety. All major cards and UPI supported.</p>
+                            <h4 className="text-xl font-bold text-gray-900 mb-1">Use Razorpay Test Keys</h4>
+                            <p className="text-gray-500 text-sm mb-2">Test integration is active. Sandbox Key ID is configured.</p>
                         </div>
                     </div>
                     <div className="flex gap-4">
-                        <button 
+                        <button
                             onClick={handleBackToLogin}
                             className="px-8 py-4 bg-gray-50 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors"
                         >
@@ -217,7 +323,5 @@ const Pricing: React.FC = () => {
         </div>
     );
 };
-
-
 
 export default Pricing;

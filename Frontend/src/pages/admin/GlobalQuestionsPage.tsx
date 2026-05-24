@@ -45,7 +45,7 @@ const GlobalQuestionsPage: React.FC = () => {
     const [modalStandard, setModalStandard] = useState('');
     const [modalSubject, setModalSubject] = useState('');
     const [modalChapter, setModalChapter] = useState('');
- 
+
     // AI Extraction States
     const [isExtracting, setIsExtracting] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -130,7 +130,7 @@ const GlobalQuestionsPage: React.FC = () => {
             questionType: q.questionType,
             questionText: q.questionText,
             options: q.options ? [q.options.a, q.options.b, q.options.c, q.options.d] : ['', '', '', ''],
-            answer: q.answer?.correctOption ? ['a','b','c','d'].indexOf(q.answer.correctOption).toString() : q.answer?.text || '',
+            answer: q.answer?.correctOption ? ['a', 'b', 'c', 'd'].indexOf(q.answer.correctOption).toString() : q.answer?.text || '',
             difficulty: q.difficulty as Difficulty,
             marks: q.marks
         });
@@ -144,7 +144,7 @@ const GlobalQuestionsPage: React.FC = () => {
             let qAnswer = {};
             if (modalData.questionType === QuestionType.MCQ) {
                 qOptions = { a: modalData.options[0], b: modalData.options[1], c: modalData.options[2], d: modalData.options[3] };
-                qAnswer = { correctOption: ['a','b','c','d'][parseInt(modalData.answer) || 0] };
+                qAnswer = { correctOption: ['a', 'b', 'c', 'd'][parseInt(modalData.answer) || 0] };
             } else {
                 qAnswer = { text: modalData.answer };
             }
@@ -254,30 +254,56 @@ const GlobalQuestionsPage: React.FC = () => {
     const handleAIUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
- 
+
         setIsExtracting(true);
         const formData = new FormData();
         formData.append('file', file);
- 
+
         try {
             const token = localStorage.getItem('token');
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/questions/extract-pdf`, formData, {
-                headers: { 
+                headers: {
                     'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}` 
+                    'Authorization': `Bearer ${token}`
                 }
             });
- 
-            const extracted = response.data.data.map((q: any) => ({
-                questionText: q.questionText,
-                questionType: q.questionType,
-                difficulty: q.difficulty,
-                marks: q.marks,
-                options: q.options ? [q.options.a, q.options.b, q.options.c, q.options.d] : ['', '', '', ''],
-                answer: q.questionType === QuestionType.MCQ ? ['a', 'b', 'c', 'd'].indexOf(q.answer).toString() : q.answer,
-                status: 'pending'
-            }));
- 
+
+            const extracted = response.data.data.map((q: any) => {
+                const isArrayOptions = Array.isArray(q.options);
+                const optA = isArrayOptions ? q.options[0] : (q.options?.a || q.options?.A || '');
+                const optB = isArrayOptions ? q.options[1] : (q.options?.b || q.options?.B || '');
+                const optC = isArrayOptions ? q.options[2] : (q.options?.c || q.options?.C || '');
+                const optD = isArrayOptions ? q.options[3] : (q.options?.d || q.options?.D || '');
+                const mappedOptions = [optA || '', optB || '', optC || '', optD || ''];
+
+                let answerIdx = '0';
+                if (q.questionType === QuestionType.MCQ || !q.questionType) {
+                    if (typeof q.answer === 'string') {
+                        const lowerAns = q.answer.toLowerCase().trim();
+                        if (lowerAns === 'a' || lowerAns === '1' || lowerAns === 'option a') answerIdx = '0';
+                        else if (lowerAns === 'b' || lowerAns === '2' || lowerAns === 'option b') answerIdx = '1';
+                        else if (lowerAns === 'c' || lowerAns === '3' || lowerAns === 'option c') answerIdx = '2';
+                        else if (lowerAns === 'd' || lowerAns === '4' || lowerAns === 'option d') answerIdx = '3';
+                        else {
+                            const idx = mappedOptions.findIndex(opt => opt && opt.toLowerCase().trim() === lowerAns);
+                            if (idx !== -1) answerIdx = idx.toString();
+                        }
+                    } else if (typeof q.answer === 'number') {
+                        answerIdx = q.answer.toString();
+                    }
+                }
+
+                return {
+                    questionText: q.questionText || q.QuestionText || '',
+                    questionType: q.questionType || q.QuestionType || QuestionType.SHORT,
+                    difficulty: q.difficulty || q.Difficulty || Difficulty.MEDIUM,
+                    marks: q.marks || q.Marks || 1,
+                    options: mappedOptions,
+                    answer: (q.questionType === QuestionType.MCQ || !q.questionType) ? answerIdx : (q.answer || ''),
+                    status: 'pending'
+                };
+            });
+
             setNewQuestions(extracted);
             setIsBulkModalOpen(true);
             toast.success('Questions extracted! Please review and publish.');
@@ -288,7 +314,7 @@ const GlobalQuestionsPage: React.FC = () => {
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
- 
+
     const handlePublish = async () => {
         if (!modalStandard || !modalSubject || !modalChapter) {
             toast.warning('Please select Standard, Subject and Chapter');
@@ -369,13 +395,13 @@ const GlobalQuestionsPage: React.FC = () => {
             header: 'Actions',
             accessor: (q: Question) => (
                 <div className="flex items-center gap-2">
-                    <button 
+                    <button
                         onClick={() => handleEdit(q)}
                         className="p-2.5 rounded-xl border border-gray-100 text-gray-400 hover:text-brand-blue hover:bg-brand-blue/5 transition-all shadow-sm"
                     >
                         <Edit3 className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                         onClick={() => handleDelete(q.id)}
                         className="p-2.5 rounded-xl border border-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm"
                     >
@@ -390,19 +416,19 @@ const GlobalQuestionsPage: React.FC = () => {
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-2">
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-tight">Global Question Bank</h1>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-tight">Global Question Bank</h1>
                     <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
                         Gujarat Board <ChevronRight className="w-3 h-3" /> <span className="text-brand-blue">Standard Syllabus</span>
                     </p>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleAIUpload} 
-                        accept=".pdf" 
-                        className="hidden" 
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAIUpload}
+                        accept=".pdf"
+                        className="hidden"
                     />
                     <button
                         onClick={() => fileInputRef.current?.click()}
@@ -425,7 +451,7 @@ const GlobalQuestionsPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/20 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 bg-white p-4 sm:p-6 md:p-8 rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/20 items-end">
                 <div className="lg:col-span-3 space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-1">Standard</label>
                     <select
@@ -560,7 +586,7 @@ const GlobalQuestionsPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[400px]">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:p-6 md:p-8 min-h-[400px]">
                         <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
                             {newQuestions.map((q, idx) => (
                                 <div
@@ -700,7 +726,7 @@ const GlobalQuestionsPage: React.FC = () => {
                     </>
                 }
             >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:p-6 md:p-8">
                     <div className="md:col-span-2 space-y-6">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Rich Text Question Content</label>
@@ -745,21 +771,21 @@ const GlobalQuestionsPage: React.FC = () => {
                                     {['a', 'b', 'c', 'd'].map((char, i) => (
                                         <div key={char} className="space-y-1">
                                             <div className="flex items-center gap-2 pl-2">
-                                                <input 
-                                                    type="radio" 
-                                                    name="correctAnswer" 
-                                                    checked={modalData.answer === i.toString()} 
-                                                    onChange={() => setModalData(prev => ({...prev, answer: i.toString()}))}
+                                                <input
+                                                    type="radio"
+                                                    name="correctAnswer"
+                                                    checked={modalData.answer === i.toString()}
+                                                    onChange={() => setModalData(prev => ({ ...prev, answer: i.toString() }))}
                                                 />
                                                 <span className="text-[10px] font-bold uppercase text-gray-400">Option {char.toUpperCase()}</span>
                                             </div>
-                                            <input 
-                                                type="text" 
-                                                value={modalData.options[i]} 
+                                            <input
+                                                type="text"
+                                                value={modalData.options[i]}
                                                 onChange={(e) => {
                                                     const newOpts = [...modalData.options];
                                                     newOpts[i] = e.target.value;
-                                                    setModalData(prev => ({...prev, options: newOpts}));
+                                                    setModalData(prev => ({ ...prev, options: newOpts }));
                                                 }}
                                                 className="w-full px-4 py-3 bg-gray-50 rounded-xl text-xs font-bold font-gujarati"
                                             />
@@ -770,9 +796,9 @@ const GlobalQuestionsPage: React.FC = () => {
                         ) : (
                             <div className="space-y-2 pt-4 border-t border-gray-100">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Reference Answer</label>
-                                <textarea 
+                                <textarea
                                     value={modalData.answer}
-                                    onChange={(e) => setModalData(prev => ({...prev, answer: e.target.value}))}
+                                    onChange={(e) => setModalData(prev => ({ ...prev, answer: e.target.value }))}
                                     className="w-full h-24 px-5 py-4 bg-gray-50 border-0 rounded-2xl font-bold text-sm focus:ring-4 focus:ring-brand-blue/5 resize-none font-gujarati"
                                     placeholder="Enter the correct answer or solution details..."
                                 />
@@ -780,7 +806,7 @@ const GlobalQuestionsPage: React.FC = () => {
                         )}
                     </div>
 
-                    <div className="space-y-6 bg-gray-100/30 p-8 rounded-[2.5rem] border border-gray-100 h-fit">
+                    <div className="space-y-6 bg-gray-100/30 p-4 sm:p-6 md:p-8 rounded-[2.5rem] border border-gray-100 h-fit">
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center gap-2">
                                 <GraduationCap className="w-3.5 h-3.5 text-brand-blue" /> Standard
@@ -830,4 +856,3 @@ const GlobalQuestionsPage: React.FC = () => {
 };
 
 export default GlobalQuestionsPage;
-

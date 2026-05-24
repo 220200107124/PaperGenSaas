@@ -56,12 +56,22 @@ export class AuthService {
     if (user && user.password === trimmedPass) {
       // 1. Check if email is verified (for individual teachers)
       if (user.role === UserRole.TEACHER && !user.schoolId && !user.isEmailVerified) {
-        throw new UnauthorizedException('Please verify your email before login');
+        throw new UnauthorizedException('Please verify your email before login. Check your inbox for the verification link.');
       }
 
       // 2. Check if school account is approved (for School Admin/Teacher)
       if (user.schoolId && (user.status !== 'ACTIVE' && user.status !== 'APPROVED')) {
-          throw new UnauthorizedException('Your school account is not approved yet');
+          throw new UnauthorizedException('Your school account is pending approval by the admin.');
+      }
+
+      // 3. Subscription check (Optional: Usually we allow login to Pay, but if the requirement is to BLOCK login, we do it here)
+      // I'll skip blocking login for teachers/schools without subscription so they can actually reach the pricing page to pay.
+      // However, for teachers WHO ARE PART OF A SCHOOL, we check the school subscription.
+      if (user.role === UserRole.TEACHER && user.schoolId) {
+          const subscription = await this.subscriptionsService.getActiveSubscription({ schoolId: user.schoolId });
+          if (!subscription) {
+              throw new UnauthorizedException('Access denied. Your school does not have an active subscription.');
+          }
       }
       
       console.log(`[AuthService] Password matched for ${trimmedEmail}`);

@@ -52,6 +52,9 @@ export class QuestionsController {
         qData.schoolId = user.schoolId;
       }
       qData.createdBy = user.id;
+      qData.difficulty = qData.difficulty || 'MEDIUM';
+      qData.questionType = qData.questionType || 'SHORT';
+      qData.marks = qData.marks || 1;
       return qData;
     });
 
@@ -63,6 +66,7 @@ export class QuestionsController {
     };
   }
 
+  @Post()
   @Roles(UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN, UserRole.TEACHER)
   async create(@Body() createQuestionDto: CreateQuestionDto, @GetUser() user: any) {
     let finalDto: any = { ...createQuestionDto };
@@ -75,6 +79,9 @@ export class QuestionsController {
       finalDto.schoolId = user.schoolId;
     }
     finalDto.createdBy = user.id;
+    finalDto.difficulty = finalDto.difficulty || 'MEDIUM';
+    finalDto.questionType = finalDto.questionType || 'SHORT';
+    finalDto.marks = finalDto.marks || 1;
 
     const question = await this.questionsService.create(finalDto);
     return {

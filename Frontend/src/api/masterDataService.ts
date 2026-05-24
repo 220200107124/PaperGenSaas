@@ -9,6 +9,7 @@ export interface Subject {
   id: string;
   name: string;
   standardId: string;
+  standard?: Standard;
 }
 
 export interface Chapter {
@@ -19,7 +20,9 @@ export interface Chapter {
 
 export const masterDataService = {
   getStandards: async (): Promise<Standard[]> => {
-    const response = await apiClient.get<{ data: Standard[] }>('/standards');
+    const response = await apiClient.get<{ data: Standard[] }>('/standards/public', {
+      params: { limit: 100 }
+    });
     return response.data.data;
   },
 
@@ -29,8 +32,8 @@ export const masterDataService = {
   },
 
   getSubjects: async (standardId?: string): Promise<Subject[]> => {
-    const response = await apiClient.get<{ data: Subject[] }>('/subjects', {
-      params: { standardId },
+    const response = await apiClient.get<{ data: Subject[] }>('/subjects/public', {
+      params: { standardId, limit: 100 },
     });
     return response.data.data;
   },

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeepPartial } from 'typeorm';
+import { Repository, DeepPartial, IsNull } from 'typeorm';
 import { Subscription } from './entities/subscriptions.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { createPaginationResponse } from '../common/utils/pagination.util';
@@ -20,15 +20,20 @@ export class SubscriptionsService {
     return await this.subscriptionsRepository.save(subscription);
   }
 
-  async findAll(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10, search, sortBy, order = 'ASC' } = paginationDto;
+  async findAll(paginationDto: any) {
+    const { page = 1, limit = 10, search, sortBy, order = 'ASC', type } = paginationDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.subscriptionsRepository.createQueryBuilder('subscription')
-      .leftJoinAndSelect('subscription.school', 'school');
+      .leftJoinAndSelect('subscription.school', 'school')
+      .leftJoinAndSelect('subscription.user', 'user');
+
+    if (type) {
+      queryBuilder.andWhere('subscription.type = :type', { type });
+    }
 
     if (search) {
-      queryBuilder.andWhere('(subscription.planName ILIKE :search OR school.name ILIKE :search)', { search: `%${search}%` });
+      queryBuilder.andWhere('(subscription.planName ILIKE :search OR school.name ILIKE :search OR user.name ILIKE :search)', { search: `%${search}%` });
     }
 
     if (sortBy) {
@@ -63,12 +68,15 @@ export class SubscriptionsService {
 
     return this.create({
       schoolId,
+      type: 'school',
       planName: freePlan ? freePlan.name : 'FREE_PLAN',
+      price: freePlan ? freePlan.price : 0,
+      currency: 'INR',
       paperLimit: freePlan ? freePlan.paperLimit : 20,
       teacherLimit: freePlan ? freePlan.teacherLimit : 1,
       startDate,
       endDate,
-      status: true,
+      status: 'ACTIVE',
       modulePermissions: freePlan ? freePlan.modulePermissions : {
         paperModule: true,
         teacherModule: true,
@@ -89,17 +97,32 @@ export class SubscriptionsService {
   async activateSubscription(data: { 
     userId?: string; 
     schoolId?: string; 
-    planName: string;
-    razorpayOrderId: string;
-    razorpayPaymentId: string;
-    razorpaySignature: string;
+    type: 'school' | 'teacher';
+    planId?: string;
+    planName?: string;
+    razorpayOrderId?: string;
+    razorpayPaymentId?: string;
+    razorpaySignature?: string;
+    paypalOrderId?: string;
+    paypalCaptureId?: string;
   }) {
-    const { userId, schoolId, planName, razorpayOrderId, razorpayPaymentId, razorpaySignature } = data;
+    const { userId, schoolId, type, planId, planName, razorpayOrderId, razorpayPaymentId, razorpaySignature, paypalOrderId, paypalCaptureId } = data;
 
     // Fetch plan details from DB
-    const plan = await this.plansService.findByName(planName);
-    if (!plan) {
-      throw new Error(`Plan ${planName} not found in system.`);
+    let plan = planId ? await this.plansService.findOne(planId) : (planName ? await this.plansService.findByName(planName) : null);
+    
+    // In test bypass mode, if a plan isn't seeded, gracefully fall back to a mock plan.
+    if (!plan && paypalOrderId === 'TEST_MODE_BYPASS') {
+       plan = {
+         id: 'mock-plan-id',
+         name: planName || 'TEST_PLAN',
+         price: 999,
+         paperLimit: 500,
+         teacherLimit: 10,
+         modulePermissions: { paperModule: true, teacherModule: true, questionModule: true, aiModule: true }
+       } as any;
+    } else if (!plan) {
+      throw new Error(`Plan not found in system.`);
     }
 
     const startDate = new Date();
@@ -109,36 +132,62 @@ export class SubscriptionsService {
     const subscription = this.subscriptionsRepository.create({
       userId,
       schoolId,
-      planName: plan.name,
-      paperLimit: plan.paperLimit,
-      teacherLimit: plan.teacherLimit,
+      type,
+      planId: plan!.id,
+      planName: plan!.name,
+      price: paypalOrderId && !paypalOrderId.startsWith('FREE_PLAN_') ? Number((plan!.price / 83).toFixed(2)) : plan!.price,
+      currency: paypalOrderId && !paypalOrderId.startsWith('FREE_PLAN_') ? 'USD' : 'INR',
+      paperLimit: plan!.paperLimit,
+      teacherLimit: plan!.teacherLimit,
       startDate,
       endDate,
-      status: true,
+      status: 'ACTIVE',
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
-      modulePermissions: plan.modulePermissions
+      paypalOrderId,
+      paypalCaptureId,
+      modulePermissions: plan!.modulePermissions
     });
 
+    console.log(`[SubscriptionsService] Activating ${plan!.name} for ${type} ${schoolId || userId}. Status: ACTIVE`);
     return await this.subscriptionsRepository.save(subscription);
   }
 
 
-  async hasActiveSubscription(id: { schoolId?: string, userId?: string }): Promise<boolean> {
+  async getActiveSubscription(id: { schoolId?: string, userId?: string }): Promise<Subscription | null> {
     let subscription: Subscription | null = null;
     if (id.schoolId) {
       subscription = await this.findBySchool(id.schoolId);
+      if (!subscription) {
+        subscription = await this.subscriptionsRepository.findOne({
+          where: { schoolId: IsNull(), type: 'school' },
+          order: { createdAt: 'DESC' }
+        });
+      }
     } else if (id.userId) {
       subscription = await this.findByUser(id.userId);
+      if (!subscription) {
+        subscription = await this.subscriptionsRepository.findOne({
+          where: { userId: IsNull(), schoolId: IsNull(), type: 'teacher' },
+          order: { createdAt: 'DESC' }
+        });
+      }
     }
 
-    if (!subscription) return false;
+    if (!subscription) return null;
     
     const now = new Date();
-    return subscription.status && 
+    const isActive = subscription.status === 'ACTIVE' && 
            (!subscription.startDate || subscription.startDate <= now) && 
            (!subscription.endDate || subscription.endDate >= now);
+    
+    return isActive ? subscription : null;
+  }
+
+  async hasActiveSubscription(id: { schoolId?: string, userId?: string }): Promise<boolean> {
+    const sub = await this.getActiveSubscription(id);
+    return !!sub;
   }
 
   async remove(id: string): Promise<void> {

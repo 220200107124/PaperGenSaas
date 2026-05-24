@@ -66,7 +66,7 @@ const Sidebar: React.FC = () => {
 
     return (
         <aside className={clsx(
-            "fixed md:sticky top-0 left-0 z-30 w-72 bg-white border-r border-gray-100 h-screen flex flex-col transition-transform duration-300 md:translate-x-0 shadow-2xl md:shadow-none",
+            "fixed lg:sticky top-0 left-0 z-30 w-64 lg:w-72 bg-white border-r border-gray-100 h-screen flex flex-col transition-transform duration-300 lg:translate-x-0 shadow-2xl lg:shadow-none",
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
             <div className="p-6 border-b border-gray-50">
@@ -82,7 +82,7 @@ const Sidebar: React.FC = () => {
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
-                        className="md:hidden p-2 text-gray-400 hover:text-gray-900 transition-colors"
+                        className="lg:hidden p-3 text-gray-400 hover:text-gray-900 transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>

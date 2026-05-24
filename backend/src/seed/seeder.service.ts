@@ -2,6 +2,7 @@ import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/users.entity';
 import { SchoolsService } from '../schools/schools.service';
+import { PlansService } from '../subscriptions/plans.service';
 
 @Injectable()
 export class SeederService implements OnApplicationBootstrap {
@@ -10,6 +11,7 @@ export class SeederService implements OnApplicationBootstrap {
   constructor(
     private readonly usersService: UsersService,
     private readonly schoolsService: SchoolsService,
+    private readonly plansService: PlansService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -18,6 +20,53 @@ export class SeederService implements OnApplicationBootstrap {
 
   async seed() {
     this.logger.log('Starting seeding process...');
+
+    // 0. Seed Plans
+    const plansRes = await this.plansService.findAll({ limit: 100 });
+    if (plansRes.data.length === 0) {
+      await this.plansService.create({
+        name: 'FREE',
+        price: 0,
+        description: 'Perfect for individual teachers getting started.',
+        paperLimit: 5,
+        teacherLimit: 1,
+        modulePermissions: {
+          paperModule: true,
+          questionModule: true,
+          aiModule: false,
+        },
+        isActive: true,
+      });
+
+      await this.plansService.create({
+        name: 'BASIC',
+        price: 999,
+        description: 'Comprehensive features for small schools or departments.',
+        paperLimit: 50,
+        teacherLimit: 10,
+        modulePermissions: {
+          paperModule: true,
+          questionModule: true,
+          aiModule: true,
+        },
+        isActive: true,
+      });
+
+      await this.plansService.create({
+        name: 'PRO',
+        price: 2499,
+        description: 'Unlimited potential for large educational institutions.',
+        paperLimit: -1,
+        teacherLimit: -1,
+        modulePermissions: {
+          paperModule: true,
+          questionModule: true,
+          aiModule: true,
+        },
+        isActive: true,
+      });
+      this.logger.log('Default plans seeded: FREE, BASIC, PRO');
+    }
 
     // 1. Seed Super Admin
     const adminEmail = 'admin@papergen.com';
