@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CreditCard, TrendingUp, Users, Plus, Edit3, Trash2, ChevronRight, Shield } from 'lucide-react';
+import CustomSelect from '../../components/CustomOption';
 import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import StatusToggle from '../../components/StatusToggle';
@@ -256,24 +257,23 @@ const SubscriptionsPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2 md:col-span-2">
                             <label className="text-sm font-black text-gray-700 uppercase tracking-widest ml-1">Target Institution</label>
-                            <select
-                                className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-blue/5 focus:bg-white focus:border-brand-blue/20 transition-all"
-                                {...formik.getFieldProps('schoolId')}
-                            >
-                                <option value="">Select School</option>
-                                {schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
+                            <CustomSelect
+                                options={schools.map(s => ({ value: s.id, label: s.name }))}
+                                value={formik.values.schoolId}
+                                onChange={(val) => formik.setFieldValue('schoolId', val)}
+                                placeholder="Select School"
+                            />
                             {formik.touched.schoolId && formik.errors.schoolId && <p className="text-red-500 text-[10px] font-black mt-1 ml-1">{formik.errors.schoolId}</p>}
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-black text-gray-700 uppercase tracking-widest ml-1">License Plan</label>
-                            <select
-                                className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-blue/5 focus:bg-white focus:border-brand-blue/20 transition-all"
-                                {...formik.getFieldProps('planName')}
-                            >
-                                {plans.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                            </select>
+                            <CustomSelect
+                                options={plans.map(p => ({ value: p.name, label: p.name }))}
+                                value={formik.values.planName}
+                                onChange={(val) => formik.setFieldValue('planName', val)}
+                                placeholder="Select Plan"
+                            />
                         </div>
 
                         <div className="space-y-2">

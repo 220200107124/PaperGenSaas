@@ -5,6 +5,7 @@ import DataTable from '../../components/DataTable';
 import Badge from '../../components/Badge';
 import StatusToggle from '../../components/StatusToggle';
 import Modal from '../../components/Modal';
+import CustomSelect from '../../components/CustomOption';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
@@ -37,7 +38,6 @@ const SubjectsManagementPage: React.FC = () => {
         const fetchStandards = async () => {
             try {
                 const token = localStorage.getItem('token');
-                // Fetch active standards for dropdown - using a large limit to get all
                 const response = await axios.get(`${import.meta.env.VITE_API_URL}/standards?limit=100`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -149,6 +149,13 @@ const SubjectsManagementPage: React.FC = () => {
         }
     ];
 
+    const standardOptions = [
+        { value: '', label: 'All Standards' },
+        ...standards.map(s => ({ value: s.id, label: s.name }))
+    ];
+
+    const standardFormOptions = standards.map(s => ({ value: s.id, label: s.name }));
+
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -157,16 +164,14 @@ const SubjectsManagementPage: React.FC = () => {
                     <p className="text-gray-400 font-black text-xs uppercase tracking-[0.2em]">Add subjects linked to standards</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <select
-                        value={selectedStandard}
-                        onChange={(e) => setSelectedStandard(e.target.value)}
-                        className="px-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-gray-600 focus:outline-none focus:ring-4 focus:ring-brand-blue/5 shadow-sm transition-all"
-                    >
-                        <option value="">All Standards</option>
-                        {standards.map(s => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                    </select>
+                    <div className="w-52">
+                        <CustomSelect
+                            options={standardOptions}
+                            value={selectedStandard}
+                            onChange={setSelectedStandard}
+                            placeholder="All Standards"
+                        />
+                    </div>
                     <button
                         onClick={() => { setEditingSubject(null); setIsModalOpen(true); }}
                         className="flex items-center gap-2 px-8 py-4 bg-brand-blue text-white rounded-2xl font-black text-sm hover:bg-brand-blue-dark transition-all shadow-xl shadow-brand-blue/20 active:scale-95"
@@ -217,15 +222,12 @@ const SubjectsManagementPage: React.FC = () => {
                 <form className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-sm font-black text-gray-700 uppercase tracking-widest ml-1">Standard</label>
-                        <select
-                            className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-brand-blue/5 focus:bg-white focus:border-brand-blue/20 transition-all"
-                            {...formik.getFieldProps('standardId')}
-                        >
-                            <option value="">Select Standard</option>
-                            {standards.map(s => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                        </select>
+                        <CustomSelect
+                            options={standardFormOptions}
+                            value={formik.values.standardId}
+                            onChange={(val) => formik.setFieldValue('standardId', val)}
+                            placeholder="Select Standard"
+                        />
                         {formik.touched.standardId && formik.errors.standardId && (
                             <div className="text-red-500 text-xs font-bold mt-1 ml-1">{formik.errors.standardId}</div>
                         )}
@@ -250,4 +252,3 @@ const SubjectsManagementPage: React.FC = () => {
 };
 
 export default SubjectsManagementPage;
-
