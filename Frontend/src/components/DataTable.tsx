@@ -1,6 +1,8 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Search, Filter, RotateCw } from 'lucide-react';
 import { clsx } from 'clsx';
+import CustomSelect from './CustomOption';
+
 
 interface Column<T> {
     header: string;
@@ -60,15 +62,17 @@ function DataTable<T extends { id: string | number }>({
                                 PAGE {pagination.currentPage} OF {pagination.totalPages}
                             </div>
                             {pagination.onPageSizeChange && (
-                                <select
-                                    value={pagination.pageSize}
-                                    onChange={(e) => pagination.onPageSizeChange?.(Number(e.target.value))}
-                                    className="bg-white border border-gray-100 rounded-xl px-3 py-1.5 text-xs font-bold text-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/5 transition-all shadow-sm cursor-pointer hover:bg-gray-50"
-                                >
-                                    {[10, 25, 50, 100].map(size => (
-                                        <option key={size} value={size}>{size} per page</option>
-                                    ))}
-                                </select>
+                                <div className="w-40 text-xs font-bold text-gray-700">
+                                    <CustomSelect
+                                        options={[10, 25, 50, 100].map(size => ({
+                                            value: String(size),
+                                            label: `${size} per page`
+                                        }))}
+                                        value={String(pagination.pageSize || 10)}
+                                        onChange={(val) => pagination.onPageSizeChange?.(Number(val))}
+                                        placeholder="Page Size"
+                                    />
+                                </div>
                             )}
                         </div>
                     )}

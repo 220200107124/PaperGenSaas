@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     GraduationCap, 
@@ -14,13 +14,61 @@ import {
     Instagram, 
     Twitter, 
     Facebook, 
-    Linkedin 
+    Linkedin,
+    Star,
+    ChevronLeft,
+    ChevronRight,
+    Phone,
+    MessageCircle,
+    Check
 } from 'lucide-react';
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [currentTestimonial, setCurrentTestimonial] = useState(0);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 400) {
+                setShowScrollTop(true);
+            } else {
+                setShowScrollTop(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const homeTestimonials = [
+        {
+            name: "Bindiya Babariya",
+            role: "CEO, HomeServe Pro",
+            text: '"Working with Kryyvix was the best decision for our business. They understood our needs and delivered a website that truly represents our brand quality."',
+            avatar: "https://i.pravatar.cc/150?u=bindiya",
+        },
+        {
+            name: "Rajeshbhai Patel",
+            role: "Principal, Bright School",
+            text: '"PaperGen has completely transformed how our teachers approach examinations. What used to take days now takes minutes."',
+            avatar: "https://i.pravatar.cc/150?u=a",
+        },
+        {
+            name: "Anjaliben Shah",
+            role: "Snr Teacher, Vidya Sankul",
+            text: '"The question bank quality is exceptional. It exactly matches the GSEB standards our students are tested on."',
+            avatar: "https://i.pravatar.cc/150?u=b",
+        },
+        {
+            name: "Maheshbhai Desai",
+            role: "Vice Principal, Shree Academy",
+            text: '"PaperGen saved our staff countless hours during exam season. The PDF output is clean and ready to print."',
+            avatar: "https://i.pravatar.cc/150?u=c",
+        }
+    ];
+
 
     const stats = [
         { label: 'Registered Schools', value: '500+', icon: GraduationCap },
@@ -293,51 +341,89 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* Testimonials */}
-            <section className="py-16 sm:py-24 max-w-[1400px] mx-auto px-4 sm:px-6">
-                <div className="bg-gray-900 rounded-[3rem] sm:rounded-[4rem] p-8 sm:p-16 lg:p-24 text-center space-y-12 sm:space-y-16 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-brand-blue/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
-                    
-                    <div className="space-y-4 relative z-10">
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">Trusted by Leading Schools</h2>
-                        <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-xs">Join the digital revolution in education</p>
+            {/* Testimonials (Kryyvix.com Style Slider) */}
+            <section className="py-20 sm:py-28 bg-[#FDFBF7] relative overflow-hidden">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+                    <div className="mb-12 sm:mb-16 space-y-4">
+                        <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif text-gray-900 tracking-tight leading-tight">
+                            Words from Our Partners
+                        </h2>
+                        <p className="text-gray-500 text-base sm:text-lg max-w-xl mx-auto font-medium">
+                            The trust we earn is the work we're proudest of.
+                        </p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 relative z-10">
-                        <div className="bg-white/10 backdrop-blur-md p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-left space-y-4 sm:space-y-6 border border-white/10">
-                            <div className="flex gap-1 text-brand-orange">
-                                {[1, 2, 3, 4, 5].map(i => <Award key={i} className="w-4 sm:w-5 h-4 sm:h-5 fill-brand-orange" />)}
+                    {/* Testimonial Card */}
+                    <div className="bg-[#FAF6F0] rounded-[2.5rem] sm:rounded-[3rem] p-8 sm:p-14 lg:p-16 text-center border border-[#F2ECE1] shadow-[0_15px_40px_-15px_rgba(28,25,23,0.05)] transition-all duration-500 ease-in-out transform hover:scale-[1.01] max-w-3xl mx-auto relative group">
+                        
+                        {/* Gold Stars */}
+                        <div className="flex justify-center gap-1.5 text-amber-500 mb-8 sm:mb-10">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                                <Star key={s} className="w-5 sm:w-6 h-5 sm:h-6 fill-amber-500 stroke-amber-500" />
+                            ))}
+                        </div>
+
+                        {/* Testimonial Text */}
+                        <blockquote className="text-xl sm:text-2xl md:text-3xl font-serif text-gray-800 italic leading-relaxed mb-8 sm:mb-12 max-w-2xl mx-auto">
+                            {homeTestimonials[currentTestimonial].text}
+                        </blockquote>
+
+                        {/* User Profile */}
+                        <div className="flex items-center justify-center gap-4">
+                            <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
+                                <img
+                                    src={homeTestimonials[currentTestimonial].avatar}
+                                    alt={homeTestimonials[currentTestimonial].name}
+                                    loading="lazy"
+                                    className="w-full h-full object-cover"
+                                />
                             </div>
-                            <p className="text-lg sm:text-xl text-white font-black italic leading-relaxed">
-                                "PaperGen has completely transformed how our teachers approach examinations. What used to take days now takes minutes."
-                            </p>
-                            <div className="flex items-center gap-3 sm:gap-4">
-                                <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-blue-500 overflow-hidden">
-                                     <img src="https://i.pravatar.cc/150?u=a" alt="principal" loading="lazy" className="w-full h-full object-cover" />
-                                </div>
-                                <div>
-                                    <span className="block font-black text-white text-sm sm:text-base">Rajeshbhai Patel</span>
-                                    <span className="block text-xs text-gray-400 font-bold uppercase tracking-widest">Principal, Bright School</span>
-                                </div>
+                            <div className="text-left">
+                                <span className="block font-black text-gray-900 text-base sm:text-lg leading-tight">
+                                    {homeTestimonials[currentTestimonial].name}
+                                </span>
+                                <span className="block text-xs sm:text-sm text-gray-500 font-medium">
+                                    {homeTestimonials[currentTestimonial].role}
+                                </span>
                             </div>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-md p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] text-left space-y-4 sm:space-y-6 border border-white/10">
-                            <div className="flex gap-1 text-brand-orange">
-                                {[1, 2, 3, 4, 5].map(i => <Award key={i} className="w-4 sm:w-5 h-4 sm:h-5 fill-brand-orange" />)}
-                            </div>
-                            <p className="text-lg sm:text-xl text-white font-black italic leading-relaxed">
-                                "The question bank quality is exceptional. It exactly matches the GSEB standards our students are tested on."
-                            </p>
-                            <div className="flex items-center gap-3 sm:gap-4">
-                                <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-orange-500 overflow-hidden">
-                                     <img src="https://i.pravatar.cc/150?u=b" alt="teacher" loading="lazy" className="w-full h-full object-cover" />
-                                </div>
-                                <div>
-                                    <span className="block font-black text-white text-sm sm:text-base">Anjaliben Shah</span>
-                                    <span className="block text-xs text-gray-400 font-bold uppercase tracking-widest">Snr Teacher, Vidya Sankul</span>
-                                </div>
-                            </div>
+                    </div>
+
+                    {/* Navigation Slider Controls */}
+                    <div className="flex items-center justify-center gap-6 mt-10">
+                        {/* Prev Button */}
+                        <button
+                            onClick={() => setCurrentTestimonial((prev) => (prev === 0 ? homeTestimonials.length - 1 : prev - 1))}
+                            className="w-12 h-12 rounded-full border border-gray-200 bg-[#FAF6F0]/50 hover:bg-[#FAF6F0] text-gray-600 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm"
+                            aria-label="Previous testimonial"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+
+                        {/* Dot Indicators */}
+                        <div className="flex items-center gap-2.5">
+                            {homeTestimonials.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setCurrentTestimonial(i)}
+                                    className={`transition-all duration-300 rounded-full ${
+                                        currentTestimonial === i
+                                            ? "w-8 h-2.5 bg-teal-700"
+                                            : "w-2.5 h-2.5 bg-gray-300 hover:bg-gray-400"
+                                    }`}
+                                    aria-label={`Go to testimonial ${i + 1}`}
+                                />
+                            ))}
                         </div>
+
+                        {/* Next Button */}
+                        <button
+                            onClick={() => setCurrentTestimonial((prev) => (prev === homeTestimonials.length - 1 ? 0 : prev + 1))}
+                            className="w-12 h-12 rounded-full border border-amber-500 bg-[#FAF6F0]/50 hover:bg-[#FAF6F0] text-amber-600 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm"
+                            aria-label="Next testimonial"
+                        >
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
             </section>
@@ -369,74 +455,129 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            {/* CTA */}
-            <section className="py-16 sm:py-24 px-4 sm:px-6">
-                <div className="max-w-[1400px] mx-auto bg-brand-blue rounded-[3rem] sm:rounded-[4rem] p-8 sm:p-16 lg:p-24 xl:p-32 text-center text-white space-y-8 sm:space-y-10 shadow-2xl shadow-brand-blue/30 relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                    <div className="relative z-10 space-y-4 sm:space-y-6">
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-7xl font-black tracking-tight leading-tight">Ready to Switch to <span className="italic">Digital</span> Paper Generation?</h2>
-                        <p className="text-lg sm:text-xl text-blue-100/60 font-medium max-w-2xl mx-auto">Start your 14-day free trial today. No credit card required. Register your school now.</p>
-                        <div className="pt-6 sm:pt-8">
-                            <button onClick={() => navigate('/school-register')} className="px-8 sm:px-12 py-4 sm:py-6 bg-white text-brand-blue rounded-2xl sm:rounded-3xl font-black text-sm uppercase tracking-[0.2em] shadow-2xl hover:scale-110 active:scale-100 transition-all">Get Started Instantly</button>
+            {/* Premium CTA (Kryyvix.com Style) */}
+            <section className="py-20 sm:py-28 px-4 sm:px-6 bg-[#FDFBF7]">
+                <div className="max-w-[1200px] mx-auto bg-[#FAF6F0] rounded-[3rem] sm:rounded-[4rem] p-10 sm:p-16 lg:p-20 text-center border border-[#F2ECE1] shadow-[0_20px_50px_-20px_rgba(28,25,23,0.04)] relative overflow-hidden">
+                    <div className="relative z-10 space-y-8 sm:space-y-10">
+                        {/* Serif Heading */}
+                        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-gray-900 tracking-tight leading-tight max-w-3xl mx-auto">
+                            Let's Build Something Intelligent
+                        </h2>
+                        
+                        {/* Subtitle */}
+                        <p className="text-base sm:text-lg md:text-xl text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed">
+                            Whether it's an AI-generated GSEB paper, secure school control panels, private question banks, or a customized PDF output — we're ready to make it happen.
+                        </p>
+
+                        {/* Flex Buttons */}
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-4">
+                            <button
+                                onClick={() => navigate('/school-register')}
+                                className="w-full sm:w-auto px-10 py-5 bg-[#0D9488] hover:bg-[#0F766E] text-white rounded-full font-bold text-base shadow-lg shadow-teal-700/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 group"
+                            >
+                                Book a Strategy Call
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </button>
+                            <a
+                                href="https://wa.me/919999999999?text=Hello,%20I%20want%20to%20know%20more%20about%20PaperGen"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full sm:w-auto px-10 py-5 bg-white border border-[#EBE3D5] hover:bg-gray-50 text-gray-800 rounded-full font-bold text-base shadow-sm hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3"
+                            >
+                                <MessageCircle className="w-5 h-5 text-emerald-500 fill-emerald-500" />
+                                Quick WhatsApp Chat
+                            </a>
+                        </div>
+
+                        {/* Checkmarks Badge Row */}
+                        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-6 text-gray-500 font-medium text-sm sm:text-base">
+                            <div className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-emerald-500 stroke-[3]" />
+                                <span>No obligation</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-emerald-500 stroke-[3]" />
+                                <span>Response within 24 hours</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-emerald-500 stroke-[3]" />
+                                <span>Free strategy session</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="bg-white border-t border-gray-100 pt-16 sm:pt-24 pb-8 sm:pb-12">
+            {/* Footer (Gopinu.com Style Layout) */}
+            <footer className="bg-white border-t border-gray-100 pt-16 sm:pt-24 pb-8 sm:pb-12 relative z-10">
                 <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-16 pb-16 sm:pb-20 border-b border-gray-100">
-                        <div className="space-y-6 sm:space-y-8 md:col-span-2 lg:col-span-1">
+                    {/* Responsive Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-12 sm:gap-16 pb-16 sm:pb-20 border-b border-gray-100">
+                        
+                        {/* 1. Branding (Spans 100% on Mobile, 4/12 on Desktop) */}
+                        <div className="space-y-6 sm:space-y-8 md:col-span-12 lg:col-span-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 sm:w-10 h-8 sm:h-10 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg shadow-brand-blue/20">
+                                <div className="w-9 sm:w-10 h-9 sm:h-10 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg shadow-brand-blue/20">
                                     <GraduationCap className="text-white w-5 sm:w-6 h-5 sm:h-6" />
                                 </div>
-                                <span className="font-black text-lg sm:text-2xl text-gray-900 leading-tight">PaperGen</span>
+                                <span className="font-black text-xl sm:text-2xl text-gray-900 leading-tight">PaperGen</span>
                             </div>
-                            <p className="text-gray-500 font-medium leading-relaxed text-sm sm:text-base">The premier SaaS platform for Gujarati Medium educational institutions across the state. Standardizing education, one paper at a time.</p>
+                            <p className="text-gray-500 font-medium leading-relaxed text-sm sm:text-base max-w-md">
+                                The premier SaaS platform for Gujarati Medium educational institutions across the state. Standardizing education, one paper at a time.
+                            </p>
                             <div className="flex gap-3 sm:gap-4">
-                                <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-blue cursor-pointer transition-all"><Facebook className="w-3 sm:w-4 h-3 sm:h-4" /></div>
-                                <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-blue cursor-pointer transition-all"><Twitter className="w-3 sm:w-4 h-3 sm:h-4" /></div>
-                                <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-blue cursor-pointer transition-all"><Instagram className="w-3 sm:w-4 h-3 sm:h-4" /></div>
-                                <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-blue cursor-pointer transition-all"><Linkedin className="w-3 sm:w-4 h-3 sm:h-4" /></div>
+                                <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-blue hover:border-brand-blue/20 cursor-pointer transition-all"><Facebook className="w-4 h-4" /></div>
+                                <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-blue hover:border-brand-blue/20 cursor-pointer transition-all"><Twitter className="w-4 h-4" /></div>
+                                <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-blue hover:border-brand-blue/20 cursor-pointer transition-all"><Instagram className="w-4 h-4" /></div>
+                                <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-blue hover:border-brand-blue/20 cursor-pointer transition-all"><Linkedin className="w-4 h-4" /></div>
                             </div>
                         </div>
 
-                        <div>
-                            <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-6 sm:mb-8">Platform</h4>
-                            <ul className="space-y-3 sm:space-y-4">
-                                {['Solutions', 'Features', 'Pricing', 'Documentation', 'Changelog'].map(item => (
-                                    <li key={item}><a href="#" className="text-gray-500 font-bold hover:text-brand-blue text-sm transition-colors">{item}</a></li>
-                                ))}
-                            </ul>
+                        {/* 2. Platform & Company Links (Grid-cols-2 keeps them side-by-side on mobile, saving height!) */}
+                        <div className="grid grid-cols-2 gap-8 md:col-span-6 lg:col-span-5">
+                            <div>
+                                <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-6 sm:mb-8">Platform</h4>
+                                <ul className="space-y-3 sm:space-y-4">
+                                    {['Solutions', 'Features', 'Pricing', 'Documentation', 'Changelog'].map(item => (
+                                        <li key={item}>
+                                            <a href="#" className="text-gray-500 font-bold hover:text-brand-blue text-sm transition-colors">{item}</a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-6 sm:mb-8">Company</h4>
+                                <ul className="space-y-3 sm:space-y-4">
+                                    {['About Us', 'Contact', 'Meet the Team', 'Safety', 'Careers'].map(item => (
+                                        <li key={item}>
+                                            <a href="#" className="text-gray-500 font-bold hover:text-brand-blue text-sm transition-colors">{item}</a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
 
-                        <div>
-                            <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-6 sm:mb-8">Company</h4>
-                            <ul className="space-y-3 sm:space-y-4">
-                                {['About Us', 'Contact', 'Meet the Team', 'Safety', 'Careers'].map(item => (
-                                    <li key={item}><a href="#" className="text-gray-500 font-bold hover:text-brand-blue text-sm transition-colors">{item}</a></li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        <div>
+                        {/* 3. Contact (Spans full width on Mobile, 3/12 on Desktop) */}
+                        <div className="md:col-span-6 lg:col-span-3 space-y-6 sm:space-y-8">
                             <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-6 sm:mb-8">Contact Information</h4>
                             <ul className="space-y-4 sm:space-y-6">
                                 <li className="flex gap-3 sm:gap-4">
-                                    <div className="w-4 sm:w-5 h-4 sm:h-5 text-brand-blue mt-1"><ShieldCheck className="w-full h-full" /></div>
+                                    <div className="w-4 sm:w-5 h-4 sm:h-5 text-brand-blue mt-1 shrink-0"><ShieldCheck className="w-full h-full" /></div>
                                     <div className="text-sm font-bold text-gray-600">Surat, Gujarat, India</div>
                                 </li>
                                 <li className="flex gap-3 sm:gap-4">
-                                    <div className="w-4 sm:w-5 h-4 sm:h-5 text-brand-blue mt-1"><Zap className="w-full h-full" /></div>
-                                    <div className="text-sm font-bold text-gray-600">support@papergen.com</div>
+                                    <div className="w-4 sm:w-5 h-4 sm:h-5 text-brand-blue mt-1 shrink-0"><Zap className="w-full h-full" /></div>
+                                    <div className="text-sm font-bold text-gray-600 break-all">support@papergen.com</div>
                                 </li>
                             </ul>
                         </div>
+
                     </div>
+
+                    {/* Bottom Copyright bar */}
                     <div className="pt-8 sm:pt-12 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-                        <span className="text-gray-400 text-xs font-black uppercase tracking-[0.3em]">© 2026 PaperGen Technologies. All rights reserved.</span>
+                        <span className="text-gray-400 text-xs font-black uppercase tracking-[0.3em] text-center sm:text-left">© 2026 PaperGen Technologies. All rights reserved.</span>
                         <div className="flex gap-6 sm:gap-8">
                             <a href="#" className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] hover:text-brand-blue transition-colors">Privacy Policy</a>
                             <a href="#" className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] hover:text-brand-blue transition-colors">Terms of Service</a>
@@ -444,9 +585,34 @@ const Home: React.FC = () => {
                     </div>
                 </div>
             </footer>
+
+            {/* Sticky Floating Widgets */}
+            {/* Scroll-To-Top Button */}
+            {showScrollTop && (
+                <button
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="fixed bottom-24 right-8 z-50 p-4 bg-teal-700 hover:bg-teal-800 text-white rounded-full shadow-2xl transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                    aria-label="Scroll to top"
+                >
+                    <ChevronDown className="w-5 h-5 rotate-180" />
+                </button>
+            )}
+
+            {/* Sticky WhatsApp Bubble */}
+            <a
+                href="https://wa.me/919999999999?text=Hello,%20I%20want%20to%20know%20more%20about%20PaperGen"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-8 right-8 z-50 p-4 bg-[#25D366] hover:bg-[#20BA56] text-white rounded-full shadow-2xl transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center animate-pulse"
+                aria-label="Chat on WhatsApp"
+            >
+                <MessageCircle className="w-6 h-6 fill-white text-[#25D366]" />
+            </a>
+
         </div>
     );
 };
 
 export default Home;
+
 

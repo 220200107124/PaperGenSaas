@@ -4,6 +4,8 @@ import { Mail, Lock, User, Loader2, BookOpen, GraduationCap } from 'lucide-react
 import { authService } from '../api/authService';
 import { masterDataService } from '../api/masterDataService';
 import type { Standard, Subject } from '../api/masterDataService';
+import CustomSelect from '../components/CustomOption';
+
 
 const TeacherRegister: React.FC = () => {
 
@@ -53,6 +55,15 @@ const TeacherRegister: React.FC = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleStandardChange = (val: string) => {
+        setFormData(prev => ({ ...prev, standardId: val, subjectId: '' }));
+    };
+
+    const handleSubjectChange = (val: string) => {
+        setFormData(prev => ({ ...prev, subjectId: val }));
+    };
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.subjectId) {
@@ -94,36 +105,41 @@ const TeacherRegister: React.FC = () => {
                             </div>
                         )}
 
-                        <div className="relative group">
-                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
-                            <input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
+                        <div className="flex items-center gap-2">
+  <User className="w-5 h-5 text-gray-400" />
+  <input name="name" value={formData.name} onChange={handleChange} placeholder="Full Name" className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
+</div>
+
+                        <div className="flex items-center gap-2">
+  <Mail className="w-5 h-5 text-gray-400" />
+  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
+</div>
+
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="w-5 h-5 text-gray-400" />
+                          <CustomSelect 
+                              options={standards.map(s => ({ value: String(s.id), label: s.name }))}
+                              value={formData.standardId}
+                              onChange={handleStandardChange}
+                              placeholder="Select Standard"
+                          />
                         </div>
 
-                        <div className="relative group">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
-                            <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
-                        </div>
+                        <div className="flex items-center gap-2">
+  <BookOpen className="w-5 h-5 text-gray-400" />
+  <CustomSelect 
+    options={subjects.map(s => ({ value: String(s.id), label: s.name }))}
+    value={formData.subjectId}
+    onChange={handleSubjectChange}
+    placeholder={formData.standardId ? "Select Subject" : "Select standard first"}
+  />
+</div>
 
-                        <div className="relative group">
-                            <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
-                            <select name="standardId" value={formData.standardId} onChange={handleChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all appearance-none" required>
-                                <option value="">Select Standard</option>
-                                {standards.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
 
-                        <div className="relative group">
-                            <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
-                            <select name="subjectId" value={formData.subjectId} onChange={handleChange} className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all appearance-none" required disabled={!formData.standardId}>
-                                <option value="">Select Subject</option>
-                                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-brand-blue" />
-                            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
-                        </div>
+<div className="flex items-center gap-2">
+  <Lock className="w-5 h-5 text-gray-400" />
+  <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Password" className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue transition-all" required />
+</div>
 
                         <button type="submit" disabled={isLoading} className="w-full py-4 bg-brand-blue hover:bg-blue-800 text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-3 transition-all disabled:opacity-70">
                             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Register'}
