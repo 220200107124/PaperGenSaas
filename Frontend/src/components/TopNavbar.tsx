@@ -3,6 +3,7 @@ import { Bell, Search, User, Menu } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import Badge from './Badge';
+import { Link } from 'react-router-dom';
 
 const TopNavbar: React.FC = () => {
     const { user } = useAuthStore();
@@ -46,13 +47,15 @@ const TopNavbar: React.FC = () => {
                             </Badge>
                         </div>
                     </div>
-                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-brand-blue/10 border-2 border-brand-blue/10 flex items-center justify-center text-brand-blue shadow-lg shadow-brand-blue/5 overflow-hidden group hover:border-brand-blue/30 transition-all cursor-pointer">
+                    {user.role === 'SUPER_ADMIN' ? <Link to="/admin/profile" aria-label="Open admin profile" className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-brand-blue/10 border-2 border-brand-blue/10 flex items-center justify-center text-brand-blue shadow-lg shadow-brand-blue/5 overflow-hidden group hover:border-brand-blue/30 transition-all cursor-pointer">
                         {user.avatarUrl ? (
                             <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                         ) : (
                             <User className="w-6 h-6" />
                         )}
-                    </div>
+                    </Link> : <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-brand-blue/10 border-2 border-brand-blue/10 flex items-center justify-center text-brand-blue shadow-lg shadow-brand-blue/5 overflow-hidden">
+                        {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" /> : <User className="w-6 h-6" />}
+                    </div>}
                 </div>
             </div>
         </header>

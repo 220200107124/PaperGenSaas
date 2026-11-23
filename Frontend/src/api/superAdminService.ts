@@ -6,7 +6,14 @@ export interface PlatformStats {
   globalQuestions: number;
   totalPapersGenerated: number;
   activeSubscriptions: number;
-  revenue: number;
+  recentSchools: {
+    id: string;
+    name: string;
+    city: string;
+    plan: string;
+    status: 'Active' | 'Inactive';
+    createdAt: string;
+  }[];
 }
 
 export const superAdminService = {

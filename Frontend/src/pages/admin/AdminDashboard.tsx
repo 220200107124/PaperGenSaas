@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Users, School, Globe, CreditCard, ChevronUp, ChevronDown, CheckCircle2, Clock } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Users, School, Globe, CreditCard, CheckCircle2, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Badge from '../../components/Badge';
 import { superAdminService } from '../../api/superAdminService';
@@ -8,27 +8,38 @@ import type { PlatformStats } from '../../api/superAdminService';
 const AdminDashboard: React.FC = () => {
     const [statsData, setStatsData] = useState<PlatformStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [apiLatency, setApiLatency] = useState<number | null>(null);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [refreshError, setRefreshError] = useState(false);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const data = await superAdminService.getStats();
-                setStatsData(data);
-            } catch (error) {
-                console.error('Failed to fetch stats:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStats();
+    const fetchStats = useCallback(async (initial = false) => {
+        const startedAt = performance.now();
+        try {
+            const data = await superAdminService.getStats();
+            setStatsData(data);
+            setApiLatency(Math.round(performance.now() - startedAt));
+            setLastUpdated(new Date());
+            setRefreshError(false);
+        } catch (error) {
+            console.error('Failed to fetch stats:', error);
+            setRefreshError(true);
+        } finally {
+            if (initial) setLoading(false);
+        }
     }, []);
 
+    useEffect(() => {
+        void fetchStats(true);
+        const timer = window.setInterval(() => void fetchStats(), 30_000);
+        return () => window.clearInterval(timer);
+    }, [fetchStats]);
+
     const stats = [
-        { label: 'Total Schools', value: statsData?.totalSchools ?? '0', icon: School, color: 'text-brand-blue', bg: 'bg-brand-blue/10', change: '+12%', up: true },
-        { label: 'Total Users', value: statsData?.totalUsers ?? '0', icon: Users, color: 'text-orange-600', bg: 'bg-orange-50', change: '+18%', up: true },
-        { label: 'Global Questions', value: statsData?.globalQuestions?.toLocaleString() ?? '0', icon: Globe, color: 'text-green-600', bg: 'bg-green-50', change: '+5%', up: true },
-        { label: 'Active Subscriptions', value: statsData?.activeSubscriptions ?? '0', icon: CreditCard, color: 'text-purple-600', bg: 'bg-purple-50', change: '-2%', up: false },
+        { label: 'Total Schools', value: statsData?.totalSchools ?? '0', icon: School, color: 'text-brand-blue', bg: 'bg-brand-blue/10' },
+        { label: 'Total Users', value: statsData?.totalUsers ?? '0', icon: Users, color: 'text-orange-600', bg: 'bg-orange-50' },
+        { label: 'Global Questions', value: statsData?.globalQuestions?.toLocaleString() ?? '0', icon: Globe, color: 'text-green-600', bg: 'bg-green-50' },
+        { label: 'Active Subscriptions', value: statsData?.activeSubscriptions ?? '0', icon: CreditCard, color: 'text-purple-600', bg: 'bg-purple-50' },
     ];
 
     if (loading) {
@@ -42,12 +53,16 @@ const AdminDashboard: React.FC = () => {
         );
     }
 
-    const recentSchools = [
-        { name: 'Sarvoday Vidyamandir', city: 'Ahmedabad', plan: 'Premium', status: 'Active', date: '2 hours ago' },
-        { name: 'Shreeji Tuition Classes', city: 'Rajkot', plan: 'Standard', status: 'Active', date: '5 hours ago' },
-        { name: 'Gyan Sarita High School', city: 'Surat', plan: 'Basic', status: 'Inactive', date: '1 day ago' },
-        { name: 'Little Flowers Primary School', city: 'Vadodara', plan: 'Premium', status: 'Active', date: '2 days ago' },
-    ];
+    const recentSchools = statsData?.recentSchools ?? [];
+    const relativeTime = (date: string) => {
+        const elapsed = Math.max(0, Date.now() - new Date(date).getTime());
+        const minutes = Math.floor(elapsed / 60_000);
+        if (minutes < 1) return 'just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        return `${Math.floor(hours / 24)}d ago`;
+    };
 
     return (
         <div className="space-y-6 lg:space-y-10 px-3 sm:px-4 md:px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -66,10 +81,7 @@ const AdminDashboard: React.FC = () => {
                                 <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center duration-400 transition-all group-hover:rotate-12 group-hover:scale-110 shadow-lg`}>
                                     <Icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
                                 </div>
-                                <div className={`flex items-center gap-1 text-[9px] sm:text-[10px] md:text-sm font-black ${stat.up ? 'text-green-600' : 'text-red-500'} bg-gray-50 px-2 py-1 rounded-full`}>
-                                    {stat.up ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                                    {stat.change}
-                                </div>
+                                <span className="text-[9px] sm:text-[10px] font-bold text-gray-400">Live</span>
                             </div>
                             <div className="text-xl sm:text-2xl md:text-4xl font-black text-gray-900 mb-1">{stat.value}</div>
                             <div className="text-gray-400 font-black text-[9px] sm:text-[10px] uppercase tracking-[0.2em]">{stat.label}</div>
@@ -99,8 +111,8 @@ const AdminDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {recentSchools.map((school, i) => (
-                                    <tr key={i} className="hover:bg-gray-50">
+                                {recentSchools.map((school) => (
+                                    <tr key={school.id} className="hover:bg-gray-50">
                                         <td className="px-4 sm:px-6 md:px-8 py-4 sm:py-6">
                                             <div className="font-bold text-gray-900 text-sm sm:text-base">{school.name}</div>
                                             <div className="text-[9px] text-gray-400 uppercase">{school.city}</div>
@@ -112,10 +124,15 @@ const AdminDashboard: React.FC = () => {
                                             <Badge variant={school.status === 'Active' ? 'success' : 'error'} className="text-[9px]">{school.status}</Badge>
                                         </td>
                                         <td className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 text-right text-[10px] text-gray-400">
-                                            {school.date}
+                                            {relativeTime(school.createdAt)}
                                         </td>
                                     </tr>
                                 ))}
+                                {recentSchools.length === 0 && (
+                                    <tr><td colSpan={4} className="px-8 py-10 text-center text-sm text-gray-400">
+                                        {refreshError ? 'Unable to load schools. Retrying automatically.' : 'No schools have been added yet.'}
+                                    </td></tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -128,44 +145,31 @@ const AdminDashboard: React.FC = () => {
                         <h3 className="text-lg sm:text-xl font-black">System Health</h3>
                     </div>
 
+                    {refreshError && <p role="status" className="text-xs font-semibold text-red-600">Live data could not be refreshed. Showing the last available data.</p>}
+
                     <div className="space-y-6">
                         <div>
                             <div className="flex justify-between text-[10px] font-black">
                                 <span className="text-gray-400">API Latency</span>
-                                <span className="text-brand-blue">124ms</span>
+                                <span className="text-brand-blue">{apiLatency === null ? '—' : `${apiLatency}ms`}</span>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                                <div className="bg-brand-blue h-2 rounded-full w-[85%]"></div>
+                                <div className="bg-brand-blue h-2 rounded-full transition-all" style={{ width: apiLatency === null ? '0%' : `${Math.max(8, Math.min(100, 100 - apiLatency / 10))}%` }}></div>
                             </div>
                         </div>
 
-                        <div>
-                            <div className="flex justify-between text-[10px] font-black">
-                                <span className="text-gray-400">Cloud Storage</span>
-                                <span className="text-orange-500">62%</span>
-                            </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                                <div className="bg-orange-500 h-2 rounded-full w-[62%]"></div>
-                            </div>
+                        <div className="text-[10px] font-bold text-gray-400">
+                            {lastUpdated ? `Updated ${relativeTime(lastUpdated.toISOString())} · refreshes every 30 seconds` : 'Waiting for API response'}
                         </div>
                     </div>
 
                     <div>
                         <h4 className="text-[10px] font-black text-gray-400 uppercase mb-4">Platform Logs</h4>
-                        <div className="space-y-4">
-                            <div className="flex gap-3">
-                                <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                                <div>
-                                    <p className="text-sm font-black">Backup done</p>
-                                    <span className="text-[9px] text-gray-400">15m ago</span>
-                                </div>
-                            </div>
-                            <div className="flex gap-3">
-                                <Clock className="w-4 h-4 text-orange-600" />
-                                <div>
-                                    <p className="text-sm font-black">Update pending</p>
-                                    <span className="text-[9px] text-gray-400">1h ago</span>
-                                </div>
+                        <div className="flex gap-3">
+                            {refreshError ? <Clock className="w-4 h-4 text-orange-600" /> : <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                            <div>
+                                <p className="text-sm font-black">{refreshError ? 'API refresh failed' : 'Dashboard API connected'}</p>
+                                <span className="text-[9px] text-gray-400">{lastUpdated ? `Last successful update ${relativeTime(lastUpdated.toISOString())}` : 'No successful response yet'}</span>
                             </div>
                         </div>
                     </div>

@@ -15,6 +15,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import DashboardLayout from './layouts/DashboardLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProfilePage from './pages/admin/AdminProfilePage';
 import SchoolsPage from './pages/admin/SchoolsPage';
 import GlobalQuestionsPage from './pages/admin/GlobalQuestionsPage';
 import UsersPage from './pages/admin/UsersPage';
@@ -58,6 +59,7 @@ const App: React.FC = () => {
           {/* Super Admin Routes */}
           <Route path="admin" element={<RoleGuard allowedRoles={[UserRole.SUPER_ADMIN]} />}>
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="profile" element={<AdminProfilePage />} />
             <Route path="school-requests" element={<SchoolRequestsPage />} />
             <Route path="teacher-requests" element={<TeacherRequestsPage />} />
             <Route path="schools" element={<SchoolsPage />} />
