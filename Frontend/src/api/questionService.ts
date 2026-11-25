@@ -27,12 +27,15 @@ export const questionService = {
   },
 
   extractFromPdf: async (formData: FormData): Promise<any[]> => {
-    const response = await apiClient.post<any[]>('/questions/extract-pdf', formData, {
+    const response = await apiClient.post<any>('/questions/extract-pdf', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    const resData = response.data;
+    if (Array.isArray(resData)) return resData;
+    if (Array.isArray(resData?.data)) return resData.data;
+    return [];
   },
 
   bulkCreate: async (questions: any[]): Promise<any> => {

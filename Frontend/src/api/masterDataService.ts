@@ -1,4 +1,4 @@
-import apiClient, { publicApiClient } from './apiClient';
+import apiClient from './apiClient';
 
 export interface Standard {
   id: string;
@@ -9,6 +9,7 @@ export interface Subject {
   id: string;
   name: string;
   standardId: string;
+  standard?: Standard;
 }
 
 export interface Chapter {
@@ -19,36 +20,41 @@ export interface Chapter {
 
 export const masterDataService = {
   getStandards: async (): Promise<Standard[]> => {
-    const response = await publicApiClient.get<{ data: Standard[] }>('/standards/public');
-    return response.data.data;
+    const response = await apiClient.get<any>('/standards/public', {
+      params: { limit: 100 }
+    });
+    const resData = response.data;
+    return Array.isArray(resData) ? resData : (Array.isArray(resData?.data) ? resData.data : []);
   },
 
   createStandard: async (name: string): Promise<Standard> => {
-    const response = await apiClient.post<{ data: Standard }>('/standards', { name });
-    return response.data.data;
+    const response = await apiClient.post<any>('/standards', { name });
+    return response.data?.data || response.data;
   },
 
   getSubjects: async (standardId?: string): Promise<Subject[]> => {
-    const response = await publicApiClient.get<{ data: Subject[] }>('/subjects/public', {
-      params: { standardId },
+    const response = await apiClient.get<any>('/subjects/public', {
+      params: { standardId, limit: 100 },
     });
-    return response.data.data;
+    const resData = response.data;
+    return Array.isArray(resData) ? resData : (Array.isArray(resData?.data) ? resData.data : []);
   },
 
   createSubject: async (name: string, standardId: string): Promise<Subject> => {
-    const response = await apiClient.post<{ data: Subject }>('/subjects', { name, standardId });
-    return response.data.data;
+    const response = await apiClient.post<any>('/subjects', { name, standardId });
+    return response.data?.data || response.data;
   },
 
   getChapters: async (subjectId?: string): Promise<Chapter[]> => {
-    const response = await publicApiClient.get<{ data: Chapter[] }>('/chapters', {
+    const response = await apiClient.get<any>('/chapters', {
       params: { subjectId },
     });
-    return response.data.data;
+    const resData = response.data;
+    return Array.isArray(resData) ? resData : (Array.isArray(resData?.data) ? resData.data : []);
   },
 
   createChapter: async (name: string, subjectId: string): Promise<Chapter> => {
-    const response = await apiClient.post<{ data: Chapter }>('/chapters', { name, subjectId });
-    return response.data.data;
+    const response = await apiClient.post<any>('/chapters', { name, subjectId });
+    return response.data?.data || response.data;
   },
 };

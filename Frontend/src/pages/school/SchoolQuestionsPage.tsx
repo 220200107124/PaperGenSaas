@@ -102,8 +102,12 @@ const SchoolQuestionsPage: React.FC = () => {
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/standards?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setStandards(res.data.data);
-        } catch (err) { console.error(err); }
+            const resData = res.data;
+            setStandards(Array.isArray(resData) ? resData : (Array.isArray(resData?.data) ? resData.data : []));
+        } catch (err) {
+            console.error(err);
+            setStandards([]);
+        }
     };
 
     const fetchSubjects = async (stdId: string) => {
@@ -112,8 +116,12 @@ const SchoolQuestionsPage: React.FC = () => {
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/subjects?limit=100&standardId=${stdId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setSubjects(res.data.data);
-        } catch (err) { console.error(err); }
+            const resData = res.data;
+            setSubjects(Array.isArray(resData) ? resData : (Array.isArray(resData?.data) ? resData.data : []));
+        } catch (err) {
+            console.error(err);
+            setSubjects([]);
+        }
     };
 
     const fetchChapters = async (subId: string) => {
@@ -122,8 +130,12 @@ const SchoolQuestionsPage: React.FC = () => {
             const res = await axios.get(`${import.meta.env.VITE_API_URL}/chapters?limit=100&subjectId=${subId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setChapters(res.data.data);
-        } catch (err) { console.error(err); }
+            const resData = res.data;
+            setChapters(Array.isArray(resData) ? resData : (Array.isArray(resData?.data) ? resData.data : []));
+        } catch (err) {
+            console.error(err);
+            setChapters([]);
+        }
     };
 
     const saveQuestion = async (index: number) => {
@@ -357,7 +369,7 @@ const SchoolQuestionsPage: React.FC = () => {
                         className="w-full px-4 py-3.5 bg-gray-50 border-0 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-brand-blue/5 transition-all"
                     >
                         <option value="">All Standards</option>
-                        {standards.map(std => <option key={std.id} value={std.id}>{std.name}</option>)}
+                        {(standards || []).map(std => <option key={std.id} value={std.id}>{std.name}</option>)}
                     </select>
                 </div>
                 <div className="lg:col-span-3 space-y-2">
@@ -368,7 +380,7 @@ const SchoolQuestionsPage: React.FC = () => {
                         className="w-full px-4 py-3.5 bg-gray-50 border-0 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-brand-blue/5 transition-all"
                     >
                         <option value="">All Subjects</option>
-                        {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
+                        {(subjects || []).map(sub => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
                     </select>
                 </div>
                 <div className="lg:col-span-3 space-y-2">
@@ -379,7 +391,7 @@ const SchoolQuestionsPage: React.FC = () => {
                         className="w-full px-4 py-3.5 bg-gray-50 border-0 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-brand-blue/5 transition-all"
                     >
                         <option value="">All Chapters</option>
-                        {chapters.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+                        {(chapters || []).map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
                     </select>
                 </div>
                 <div className="lg:col-span-3">
